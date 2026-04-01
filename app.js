@@ -1588,15 +1588,40 @@ async function init() {
         appData = sbData;
     }
     // Eğer Supabase boşsa veya bağlanamazsa mockData kalır
-    
+
+    // Güncel haftayı belirle:
+    // Pazartesi-Cuma → bu haftayı göster
+    // Cumartesi veya Pazar → bir sonraki haftayı göster (Cuma gecesi otomatik geçiş)
     const now = new Date();
-    const futureEvent = appData.find(m => new Date(m.date) >= now);
-    if(futureEvent) {
-        baseDate = new Date(futureEvent.date);
-    } else if(appData.length > 0) {
-        baseDate = new Date(appData[appData.length-1].date);
+    const dayOfWeek = now.getDay(); // 0=Pazar, 6=Cumartesi
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        // Hafta sonu → bir sonraki Pazartesi'ye atla
+        const daysUntilMonday = dayOfWeek === 0 ? 1 : 2;
+        now.setDate(now.getDate() + daysUntilMonday);
     }
-    
+    baseDate = now;
+
+    // Gece yarısı otomatik hafta geçişi için zamanlayıcı
+    function scheduleAutoRefresh() {
+        const n = new Date();
+        const midnight = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1, 0, 0, 5); // gece 00:00:05
+        const msUntilMidnight = midnight - n;
+        setTimeout(() => {
+            // Sayfayı yenilemek yerine sadece baseDate'i güncelle
+            const today = new Date();
+            const d = today.getDay();
+            if (d === 0 || d === 6) {
+                const skip = d === 0 ? 1 : 2;
+                today.setDate(today.getDate() + skip);
+            }
+            baseDate = today;
+            currentWeekOffset = 0;
+            renderSchedule();
+            scheduleAutoRefresh(); // Bir sonraki gece yarısı için tekrar planla
+        }, msUntilMidnight);
+    }
+    scheduleAutoRefresh();
+
     populateMonthSelect();
     renderSchedule();
     setupEventListeners();
