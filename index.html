@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Haftalık Patoloji Eğitim Programı</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a1221">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LabEğitim">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192/0ce3e3/ffffff?text=LE">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Arkaplan görselleri (sağ üst ve sol alt için) -->
+    <div class="bg-shape top-right"></div>
+    <div class="bg-shape bottom-left"></div>
+
+    <div class="app-container">
+        
+        <header class="app-header">
+            <div class="header-nav">
+                <button class="nav-btn" id="prevWeek"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="titles" style="display:flex; flex-direction:column; align-items:center;">
+                    <h1>HASEKİ PATOLOJİ EĞİTİM PROGRAMI</h1>
+                    <p class="week-range" id="weekRangeDisplay">30 MART - 3 NİSAN 2026</p>
+                    <div style="display:flex; gap:8px; margin-top: 8px; flex-wrap: wrap; justify-content:center; position:relative; z-index:100;">
+                        <!-- Custom Month Dropdown -->
+                        <div class="custom-dropdown" id="monthDropdown">
+                            <button class="custom-dropdown-btn" id="monthDropdownBtn">📅 Tarih Seç <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i></button>
+                            <div class="custom-dropdown-list" id="monthDropdownList" style="display:none;"></div>
+                        </div>
+                        <!-- Custom Week Dropdown -->
+                        <div class="custom-dropdown" id="weekDropdown" style="display:none;">
+                            <button class="custom-dropdown-btn" id="weekDropdownBtn">Hafta Seç <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i></button>
+                            <div class="custom-dropdown-list" id="weekDropdownList" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="nav-btn" id="nextWeek"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            
+            <div class="top-actions" style="display:flex; gap:10px; justify-content:center;">
+                <button class="install-btn admin-btn" id="adminLoginBtn" style="background:transparent; border:1px solid var(--accent-cyan); color:var(--accent-cyan);">
+                    <i class="fa-solid fa-lock"></i>
+                </button>
+                <button class="install-btn" id="installPwaBtn" style="display: none;">
+                    <i class="fa-solid fa-download"></i> Uygulamayı Yükle
+                </button>
+                <button class="install-btn admin-action-btn" id="addEventBtn" style="display: none; background:var(--accent-cyan); color:var(--bg-dark);">
+                    <i class="fa-solid fa-plus"></i> Yeni Ekle
+                </button>
+                <button class="install-btn admin-action-btn" id="adminLogoutBtn" style="display: none; background:transparent; border:1px solid #ef4444; color:#ef4444;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Çıkış
+                </button>
+            </div>
+        </header>
+
+        <main class="schedule-grid" id="scheduleContainer">
+            <!-- Kartlar buraya gelecek -->
+            <div class="loading-state">
+                <div class="spinner"></div>
+            </div>
+        </main>
+        
+        <!-- YÖNETİCİ MODALLARI (GİZLİ BAŞLAR) -->
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal-overlay" style="display:none;">
+            <div class="glass-modal">
+                <button class="close-modal" id="closeLoginBtn"><i class="fa-solid fa-xmark"></i></button>
+                <div style="font-size:2.5rem; margin-bottom:1rem;">🔐</div>
+                <h2 style="font-size:1.3rem; letter-spacing:2px; margin-bottom:0.3rem;">YÖNETİCİ GİRİŞİ</h2>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.5rem;">Haseki Patoloji Eğitim Programı</p>
+                <input type="password" id="adminPassword" placeholder="Şifre..." class="modal-input" style="letter-spacing:4px; text-align:center; font-size:1.2rem;">
+                <button id="loginSubmitBtn" class="modal-btn"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
+                <div id="loginError" style="color: #ef4444; margin-top: 12px; display:none; font-size: 0.88em;"><i class="fa-solid fa-circle-exclamation"></i> Hatalı şifre, tekrar deneyin.</div>
+            </div>
+        </div>
+
+        <!-- Ekle/Düzenle Modal -->
+        <div id="editModal" class="modal-overlay" style="display:none;">
+            <div class="glass-modal">
+                <button class="close-modal" id="closeEditBtn"><i class="fa-solid fa-xmark"></i></button>
+                <h2 id="modalTitle" style="font-size:1.2rem; letter-spacing:2px; margin-bottom:1.5rem;">YENİ EĞİTİM EKLE</h2>
+                
+                <label class="modal-label"><i class="fa-regular fa-calendar"></i> Tarih</label>
+                <input type="date" id="eventDate" class="modal-input" required>
+                
+                <label class="modal-label"><i class="fa-regular fa-clock"></i> Saat</label>
+                <input type="time" id="eventTime" class="modal-input" value="08:45" required>
+                
+                <label class="modal-label"><i class="fa-solid fa-user-doctor"></i> Konuşmacılar (Virgülle Ayırın)</label>
+                <textarea id="eventSpeakers" placeholder="Örn: ASS. DR. AHMET, ASS. DR. MEHMET" class="modal-input" rows="2"></textarea>
+                
+                <label class="modal-label"><i class="fa-solid fa-microscope"></i> Konular (Virgülle Ayırın)</label>
+                <textarea id="eventTopics" placeholder="Örn: MAKALE, OLGU, GENEL PATOLOJİ" class="modal-input" rows="2"></textarea>
+                
+                <input type="hidden" id="editEventId" value="">
+                <button id="saveEventBtn" class="modal-btn"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW Error:', err));
+            });
+        }
+    </script>
+</body>
+</html>

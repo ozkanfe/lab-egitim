@@ -1,0 +1,21 @@
+{
+    "name": "Lab Eğitim Programı",
+    "short_name": "LabEğitim",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0A66C2",
+    "description": "Patoloji Laboratuvarı Haftalık Bilimsel Toplantı Programı",
+    "icons": [
+        {
+            "src": "https://via.placeholder.com/192x192/0A66C2/ffffff?text=LE",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://via.placeholder.com/512x512/0A66C2/ffffff?text=LE",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
