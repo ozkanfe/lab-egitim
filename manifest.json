@@ -1,21 +1,24 @@
 {
-    "name": "Lab Eğitim Programı",
-    "short_name": "LabEğitim",
-    "start_url": "./index.html",
+    "name": "Haseki Patoloji Eğitim Programı",
+    "short_name": "Haseki Patoloji",
+    "start_url": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#0A66C2",
-    "description": "Patoloji Laboratuvarı Haftalık Bilimsel Toplantı Programı",
+    "orientation": "portrait",
+    "background_color": "#0a1221",
+    "theme_color": "#0ce3e3",
+    "description": "Haseki Patoloji Laboratuvarı Haftalık Eğitim Programı",
     "icons": [
         {
-            "src": "https://via.placeholder.com/192x192/0A66C2/ffffff?text=LE",
+            "src": "/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
-            "src": "https://via.placeholder.com/512x512/0A66C2/ffffff?text=LE",
+            "src": "/icon-512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         }
     ]
 }
