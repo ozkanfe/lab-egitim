@@ -1430,25 +1430,38 @@ const mockData = [
 // =============================================
 const SUPABASE_URL = 'https://xcrjvgslbfvrgnesrups.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhjcmp2Z3NsYmZ2cmduZXNydXBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNzQyMTcsImV4cCI6MjA4OTk1MDIxN30.oLhipdNmbJg8-G4o1_OU7vcybqLmyNrn2c0FUh0JzNw';
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+// Supabase CDN v2 global adı 'supabase' olarak gelir (window.supabase.createClient)
+let _sbClient = null;
+try {
+    if (window.supabase && window.supabase.createClient) {
+        _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+} catch(e) { console.warn('Supabase init failed:', e); }
+const supabaseClient = _sbClient;
 
 async function fetchDataFromSupabase() {
-    if (!supabase) return null;
-    const { data, error } = await supabase
-        .from('schedule_events')
-        .select('*')
-        .order('date', { ascending: true });
-    if (error) { console.error('Supabase fetch error:', error); return null; }
-    // Normalize id/speakers/topics fields
-    return data.map(r => ({
-        id:         r.id,
-        date:       r.date,
-        dateString: r.date_string || r.date,
-        time:       r.time,
-        speakers:   Array.isArray(r.speakers) ? r.speakers : JSON.parse(r.speakers || '[]'),
-        topics:     Array.isArray(r.topics)   ? r.topics   : JSON.parse(r.topics   || '[]'),
-    }));
+    if (!supabaseClient) return null;
+    try {
+        const { data, error } = await supabaseClient
+            .from('schedule_events')
+            .select('*')
+            .order('date', { ascending: true });
+        if (error) { console.error('Supabase fetch error:', error); return null; }
+        return data.map(r => ({
+            id:         r.id,
+            date:       r.date,
+            dateString: r.date_string || r.date,
+            time:       r.time,
+            speakers:   Array.isArray(r.speakers) ? r.speakers : JSON.parse(r.speakers || '[]'),
+            topics:     Array.isArray(r.topics)   ? r.topics   : JSON.parse(r.topics   || '[]'),
+        }));
+    } catch(e) { console.error('Fetch error:', e); return null; }
 }
+
+// Eksik değişkenler (önceki düzenlemede silindi)
+let currentWeekOffset = 0;
+let baseDate = new Date();
+let isAdmin = localStorage.getItem('isAdmin') === 'true';
 
 // appData başlangıçta mockData, Supabase'den gelince güncellenir
 let appData = [...mockData];
@@ -1717,7 +1730,7 @@ function setupAdminListeners() {
     const subLgn = document.getElementById('loginSubmitBtn');
     if(subLgn) subLgn.addEventListener('click', () => {
         const pw = document.getElementById('adminPassword').value;
-        if(pw === '1234') { // Basit şifre koruması
+        if(pw === '1234qwer') {
             isAdmin = true;
             localStorage.setItem('isAdmin', 'true');
             if(loginModal) loginModal.style.display = 'none';
@@ -1770,8 +1783,8 @@ function setupAdminListeners() {
 
         if(id) {
             // Supabase'de güncelle
-            if(supabase) {
-                const { error } = await supabase.from('schedule_events').update({
+            if(supabaseClient) {
+                const { error } = await supabaseClient.from('schedule_events').update({
                     date: dateVal,
                     date_string: dateStr,
                     time: timeVal,
@@ -1784,8 +1797,8 @@ function setupAdminListeners() {
             if(ev) { ev.date=dateVal; ev.dateString=dateStr; ev.time=timeVal; ev.speakers=speakersArr; ev.topics=topicsArr; }
         } else {
             // Supabase'e ekle
-            if(supabase) {
-                const { data, error } = await supabase.from('schedule_events').insert({
+            if(supabaseClient) {
+                const { data, error } = await supabaseClient.from('schedule_events').insert({
                     date: dateVal,
                     date_string: dateStr,
                     time: timeVal,
@@ -1824,8 +1837,8 @@ function openEditModal(id) {
 window.openEditModal = openEditModal;
 window.deleteSession = async function(id) {
     if(confirm('Eğitimi programdan silmek istediğinize emin misiniz?')) {
-        if(supabase) {
-            const { error } = await supabase.from('schedule_events').delete().eq('id', id);
+        if(supabaseClient) {
+            const { error } = await supabaseClient.from('schedule_events').delete().eq('id', id);
             if(error) { alert('Silme hatası: ' + error.message); return; }
         }
         appData = appData.filter(e => e.id != id);
