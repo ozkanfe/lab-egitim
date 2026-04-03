@@ -1826,6 +1826,7 @@ function setupAdminListeners() {
         document.getElementById('eventTime').value = '08:45';
         document.getElementById('eventSpeakers').value = '';
         document.getElementById('eventTopics').value = '';
+        document.getElementById('eventImageFile').value = '';
         if(editModal) editModal.style.display = 'flex';
     });
 
@@ -1838,7 +1839,34 @@ function setupAdminListeners() {
         const speakersText = document.getElementById('eventSpeakers').value;
         const topicsText = document.getElementById('eventTopics').value;
         const categoryVal = document.getElementById('eventType').value;
-        const imageUrlVal = document.getElementById('eventImageUrl').value;
+        let imageUrlVal = document.getElementById('eventImageUrl').value;
+        const imageFile = document.getElementById('eventImageFile').files[0];
+
+        // Fotoğraf yükleme işlemi (eğer yeni bir dosya seçildiyse)
+        if (imageFile) {
+            if (supabaseClient) {
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+                const filePath = `uploads/${fileName}`;
+
+                const { data: uploadData, error: uploadError } = await supabaseClient.storage
+                    .from('event-images')
+                    .upload(filePath, imageFile);
+
+                if (uploadError) {
+                    console.error('Fotoğraf yükleme hatası:', uploadError.message);
+                    if (uploadError.message.includes('bucket')) {
+                        alert('Hata: Supabase panelinde "event-images" adında "Public" bir Bucket oluşturmanız gerekiyor.');
+                        return;
+                    }
+                } else {
+                    const { data: urlData } = supabaseClient.storage
+                        .from('event-images')
+                        .getPublicUrl(filePath);
+                    imageUrlVal = urlData.publicUrl;
+                }
+            }
+        }
         
         const speakersArr = speakersText.split(',').map(s => s.trim()).filter(s => s);
         const topicsArr = topicsText.split(',').map(s => s.trim()).filter(s => s);
@@ -1901,6 +1929,7 @@ function openEditModal(id) {
     document.getElementById('eventSpeakers').value = (ev.speakers || []).join(', ');
     document.getElementById('eventTopics').value = (ev.topics || []).join(', ');
     document.getElementById('eventImageUrl').value = ev.image_url || '';
+    document.getElementById('eventImageFile').value = '';
     document.getElementById('eventType').value = ev.category || 'lab';
     
     if(editModal) editModal.style.display = 'flex';
