@@ -1718,7 +1718,7 @@ function generateGlassCard(session) {
     let imageHtml = '';
     if (session.image_url) {
         imageHtml = `
-            <div class="card-image-container" style="width:100%; margin-bottom:1.5rem; border-radius:15px; overflow:hidden; border:1px solid var(--glass-border); background:rgba(0,0,0,0.2); cursor:pointer;" onclick="window.open('${session.image_url}', '_blank')">
+            <div class="card-image-container" style="width:100%; margin-bottom:1.5rem; border-radius:15px; overflow:hidden; border:1px solid var(--glass-border); background:rgba(0,0,0,0.2); cursor:pointer;" onclick="openImageOverlay('${session.image_url}')">
                 <img src="${session.image_url}" style="width:100%; max-height:400px; height:auto; object-fit:contain; display:block;" 
                      alt="Toplantı Görseli (Büyütmek için tıklayın)" 
                      title="Orijinal hali için tıklayın"
@@ -1975,3 +1975,29 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 document.addEventListener('DOMContentLoaded', init);
+
+// Image Overlay Logic
+function openImageOverlay(src) {
+    const overlay = document.getElementById('imageOverlay');
+    const overlayImg = document.getElementById('overlayImg');
+    if (overlay && overlayImg) {
+        overlayImg.src = src;
+        overlay.style.display = 'flex';
+    }
+}
+
+function closeImageOverlay() {
+    const overlay = document.getElementById('imageOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// Global'e ekle (onclick için)
+window.openImageOverlay = openImageOverlay;
+
+// Overlay kapatma eventlerini ekle
+document.addEventListener('click', (e) => {
+    const overlay = document.getElementById('imageOverlay');
+    if (e.target.classList.contains('close-overlay') || e.target === overlay) {
+        closeImageOverlay();
+    }
+});
