@@ -2015,9 +2015,35 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const delta = e.deltaY > 0 ? -0.1 : 0.1;
             overlayScale += delta;
-            overlayScale = Math.min(Math.max(0.5, overlayScale), 4); // Min 0.5x, Max 4x
-            if (overlayImg) {
-                overlayImg.style.transform = `scale(${overlayScale})`;
+            overlayScale = Math.min(Math.max(0.5, overlayScale), 4);
+            if (overlayImg) overlayImg.style.transform = `scale(${overlayScale})`;
+        }, { passive: false });
+
+        // Touch Zoom (Pinch)
+        let initialDistance = 0;
+        let initialScale = 1;
+
+        overlay.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialDistance = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                initialScale = overlayScale;
+            }
+        }, { passive: true });
+
+        overlay.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = Math.hypot(
+                    e.touches[0].pageX - e.touches[1].pageX,
+                    e.touches[0].pageY - e.touches[1].pageY
+                );
+                const zoomFactor = dist / initialDistance;
+                overlayScale = initialScale * zoomFactor;
+                overlayScale = Math.min(Math.max(0.5, overlayScale), 4);
+                if (overlayImg) overlayImg.style.transform = `scale(${overlayScale})`;
             }
         }, { passive: false });
     }
