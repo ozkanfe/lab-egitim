@@ -1718,9 +1718,10 @@ function generateGlassCard(session) {
     let imageHtml = '';
     if (session.image_url) {
         imageHtml = `
-            <div class="card-image-container" style="width:100%; height:220px; margin-bottom:1.5rem; border-radius:15px; overflow:hidden; border:1px solid var(--glass-border); background:rgba(0,0,0,0.2);">
-                <img src="${session.image_url}" style="width:100%; height:100%; object-fit:cover; display:block;" 
-                     alt="Toplantı Görseli" 
+            <div class="card-image-container" style="width:100%; margin-bottom:1.5rem; border-radius:15px; overflow:hidden; border:1px solid var(--glass-border); background:rgba(0,0,0,0.2); cursor:pointer;" onclick="window.open('${session.image_url}', '_blank')">
+                <img src="${session.image_url}" style="width:100%; max-height:400px; height:auto; object-fit:contain; display:block;" 
+                     alt="Toplantı Görseli (Büyütmek için tıklayın)" 
+                     title="Orijinal hali için tıklayın"
                      onerror="this.src='https://via.placeholder.com/400x220/0d1b2e/14f1f2?text=Görsel+Yüklenemedi'">
             </div>
         `;
