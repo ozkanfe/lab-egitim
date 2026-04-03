@@ -1489,10 +1489,10 @@ function getWeekRange(dateObj, offsetWeeks) {
     const monday = new Date(date.setDate(diffToMonday));
     monday.setDate(monday.getDate() + (offsetWeeks * 7));
     
-    const friday = new Date(monday);
-    friday.setDate(friday.getDate() + 4);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6); // Cuma'dan Pazar'a çekildi
     
-    return { start: monday, end: friday };
+    return { start: monday, end: sunday };
 }
 
 function populateMonthSelect() {
@@ -1718,8 +1718,10 @@ function generateGlassCard(session) {
     let imageHtml = '';
     if (session.image_url) {
         imageHtml = `
-            <div class="card-image-container" style="width:100%; height:200px; margin-bottom:1.5rem; border-radius:12px; overflow:hidden;">
-                <img src="${session.image_url}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.style.display='none'">
+            <div class="card-image-container" style="width:100%; height:220px; margin-bottom:1.5rem; border-radius:15px; overflow:hidden; border:1px solid var(--glass-border); background:rgba(0,0,0,0.2);">
+                <img src="${session.image_url}" style="width:100%; height:100%; object-fit:cover; display:block;" 
+                     alt="Toplantı Görseli" 
+                     onerror="this.src='https://via.placeholder.com/400x220/0d1b2e/14f1f2?text=Görsel+Yüklenemedi'">
             </div>
         `;
     }
