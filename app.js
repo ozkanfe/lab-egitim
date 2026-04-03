@@ -1453,6 +1453,7 @@ async function fetchDataFromSupabase() {
             dateString: r.date_string || r.date,
             time:       r.time,
             category:   r.category || 'lab',
+            image_url:  r.image_url,
             speakers:   Array.isArray(r.speakers) ? r.speakers : JSON.parse(r.speakers || '[]'),
             topics:     Array.isArray(r.topics)   ? r.topics   : JSON.parse(r.topics   || '[]'),
         }));
@@ -1714,9 +1715,19 @@ function generateGlassCard(session) {
     const isPast = sessionDateTime < now;
     const pastClass = isPast ? 'is-past' : '';
 
+    let imageHtml = '';
+    if (session.image_url) {
+        imageHtml = `
+            <div class="card-image-container" style="width:100%; height:200px; margin-bottom:1.5rem; border-radius:12px; overflow:hidden;">
+                <img src="${session.image_url}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.style.display='none'">
+            </div>
+        `;
+    }
+
     return `
         <div class="glass-card ${pastClass}" data-id="${session.id}">
             ${adminActions}
+            ${imageHtml}
             <div class="card-date" style="margin-bottom: 1rem;">${session.dateString || session.date}</div>
             
             <div class="card-time-pill" style="margin-bottom: 2rem;">
@@ -1827,6 +1838,7 @@ function setupAdminListeners() {
         const speakersText = document.getElementById('eventSpeakers').value;
         const topicsText = document.getElementById('eventTopics').value;
         const categoryVal = document.getElementById('eventType').value;
+        const imageUrlVal = document.getElementById('eventImageUrl').value;
         
         const speakersArr = speakersText.split(',').map(s => s.trim()).filter(s => s);
         const topicsArr = topicsText.split(',').map(s => s.trim()).filter(s => s);
@@ -1845,12 +1857,13 @@ function setupAdminListeners() {
                     time: timeVal,
                     speakers: speakersArr,
                     topics: topicsArr,
-                    category: categoryVal
+                    category: categoryVal,
+                    image_url: imageUrlVal
                 }).eq('id', id);
                 if(error) { alert('Güncelleme hatası: ' + error.message); return; }
             }
             const ev = appData.find(e => e.id == id);
-            if(ev) { ev.date=dateVal; ev.dateString=dateStr; ev.time=timeVal; ev.speakers=speakersArr; ev.topics=topicsArr; ev.category=categoryVal; }
+            if(ev) { ev.date=dateVal; ev.dateString=dateStr; ev.time=timeVal; ev.speakers=speakersArr; ev.topics=topicsArr; ev.category=categoryVal; ev.image_url=imageUrlVal; }
         } else {
             // Supabase'e ekle
             if(supabaseClient) {
@@ -1860,13 +1873,14 @@ function setupAdminListeners() {
                     time: timeVal,
                     speakers: speakersArr,
                     topics: topicsArr,
-                    category: categoryVal
+                    category: categoryVal,
+                    image_url: imageUrlVal
                 }).select().single();
                 if(error) { alert('Kaydetme hatası: ' + error.message); return; }
-                appData.push({ id: data.id, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal });
+                appData.push({ id: data.id, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal, image_url: imageUrlVal });
             } else {
                 const newId = appData.length > 0 ? Math.max(...appData.map(e => e.id)) + 1 : 1;
-                appData.push({ id: newId, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal });
+                appData.push({ id: newId, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal, image_url: imageUrlVal });
             }
         }
         
@@ -1886,6 +1900,7 @@ function openEditModal(id) {
     document.getElementById('eventTime').value = ev.time;
     document.getElementById('eventSpeakers').value = (ev.speakers || []).join(', ');
     document.getElementById('eventTopics').value = (ev.topics || []).join(', ');
+    document.getElementById('eventImageUrl').value = ev.image_url || '';
     document.getElementById('eventType').value = ev.category || 'lab';
     
     if(editModal) editModal.style.display = 'flex';
