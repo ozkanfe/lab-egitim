@@ -1452,6 +1452,7 @@ async function fetchDataFromSupabase() {
             date:       r.date,
             dateString: r.date_string || r.date,
             time:       r.time,
+            category:   r.category || 'lab',
             speakers:   Array.isArray(r.speakers) ? r.speakers : JSON.parse(r.speakers || '[]'),
             topics:     Array.isArray(r.topics)   ? r.topics   : JSON.parse(r.topics   || '[]'),
         }));
@@ -1462,6 +1463,7 @@ async function fetchDataFromSupabase() {
 let currentWeekOffset = 0;
 let baseDate = new Date();
 let isAdmin = localStorage.getItem('isAdmin') === 'true';
+let activeTab = 'lab';
 
 // appData başlangıçta mockData, Supabase'den gelince güncellenir
 let appData = [...mockData];
@@ -1652,7 +1654,9 @@ function renderSchedule() {
         
         const currentWeekData = appData.filter(session => {
             const sd = new Date(session.date);
-            return sd >= startCheck && sd <= endCheck;
+            const inWeek = sd >= startCheck && sd <= endCheck;
+            const inTab = (session.category || 'lab') === activeTab;
+            return inWeek && inTab;
         });
 
         if (currentWeekData.length === 0) {
@@ -1704,8 +1708,14 @@ function generateGlassCard(session) {
         contentHtml = `<div class="card-topics">Program Detayı Bekleniyor</div>`;
     }
 
+    // Geçmiş toplantı kontrolü
+    const now = new Date();
+    const sessionDateTime = new Date(`${session.date}T${session.time}`);
+    const isPast = sessionDateTime < now;
+    const pastClass = isPast ? 'is-past' : '';
+
     return `
-        <div class="glass-card" data-id="${session.id}">
+        <div class="glass-card ${pastClass}" data-id="${session.id}">
             ${adminActions}
             <div class="card-date" style="margin-bottom: 1rem;">${session.dateString || session.date}</div>
             
@@ -1736,6 +1746,25 @@ function setupEventListeners() {
         currentWeekOffset++;
         renderSchedule();
     });
+
+    // Tab Event Listeners
+    const tabLab = document.getElementById('tabLab');
+    const tabOuter = document.getElementById('tabOuter');
+    
+    if (tabLab && tabOuter) {
+        tabLab.addEventListener('click', () => {
+            activeTab = 'lab';
+            tabLab.classList.add('active');
+            tabOuter.classList.remove('active');
+            renderSchedule();
+        });
+        tabOuter.addEventListener('click', () => {
+            activeTab = 'outer';
+            tabOuter.classList.add('active');
+            tabLab.classList.remove('active');
+            renderSchedule();
+        });
+    }
 }
 
 // === ADMIN LOGIC ===
@@ -1797,6 +1826,7 @@ function setupAdminListeners() {
         const timeVal = document.getElementById('eventTime').value;
         const speakersText = document.getElementById('eventSpeakers').value;
         const topicsText = document.getElementById('eventTopics').value;
+        const categoryVal = document.getElementById('eventType').value;
         
         const speakersArr = speakersText.split(',').map(s => s.trim()).filter(s => s);
         const topicsArr = topicsText.split(',').map(s => s.trim()).filter(s => s);
@@ -1814,12 +1844,13 @@ function setupAdminListeners() {
                     date_string: dateStr,
                     time: timeVal,
                     speakers: speakersArr,
-                    topics: topicsArr
+                    topics: topicsArr,
+                    category: categoryVal
                 }).eq('id', id);
                 if(error) { alert('Güncelleme hatası: ' + error.message); return; }
             }
             const ev = appData.find(e => e.id == id);
-            if(ev) { ev.date=dateVal; ev.dateString=dateStr; ev.time=timeVal; ev.speakers=speakersArr; ev.topics=topicsArr; }
+            if(ev) { ev.date=dateVal; ev.dateString=dateStr; ev.time=timeVal; ev.speakers=speakersArr; ev.topics=topicsArr; ev.category=categoryVal; }
         } else {
             // Supabase'e ekle
             if(supabaseClient) {
@@ -1828,13 +1859,14 @@ function setupAdminListeners() {
                     date_string: dateStr,
                     time: timeVal,
                     speakers: speakersArr,
-                    topics: topicsArr
+                    topics: topicsArr,
+                    category: categoryVal
                 }).select().single();
                 if(error) { alert('Kaydetme hatası: ' + error.message); return; }
-                appData.push({ id: data.id, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr });
+                appData.push({ id: data.id, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal });
             } else {
                 const newId = appData.length > 0 ? Math.max(...appData.map(e => e.id)) + 1 : 1;
-                appData.push({ id: newId, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr });
+                appData.push({ id: newId, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal });
             }
         }
         
@@ -1854,6 +1886,7 @@ function openEditModal(id) {
     document.getElementById('eventTime').value = ev.time;
     document.getElementById('eventSpeakers').value = (ev.speakers || []).join(', ');
     document.getElementById('eventTopics').value = (ev.topics || []).join(', ');
+    document.getElementById('eventType').value = ev.category || 'lab';
     
     if(editModal) editModal.style.display = 'flex';
 }

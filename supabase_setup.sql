@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS schedule_events (
   date      TEXT NOT NULL,
   date_string TEXT,
   time      TEXT NOT NULL,
+  category  TEXT DEFAULT 'lab',
   speakers  JSONB DEFAULT '[]',
   topics    JSONB DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT NOW()

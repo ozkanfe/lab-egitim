@@ -95,14 +95,18 @@ body {
     background: transparent;
     border: none;
     color: var(--glass-highlight);
-    font-size: 2rem;
+    font-size: 3rem; /* Boyut artırıldı */
     cursor: pointer;
     transition: color 0.3s, transform 0.2s;
+    padding: 10px 20px; /* Tıklama alanı genişletildi */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .nav-btn:hover {
     color: var(--accent-cyan);
-    transform: scale(1.1);
+    transform: scale(1.2); /* Hover efekti belirginleştirildi */
 }
 
 .install-btn {
@@ -130,6 +134,43 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     gap: 2rem;
     justify-content: center;
+}
+
+/* Tabs */
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+}
+
+.tab-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    padding: 0.8rem 2rem;
+    border-radius: 40px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    text-transform: uppercase;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.tab-btn.active {
+    background: var(--accent-cyan);
+    color: #0d1b2e;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 20px rgba(20, 241, 242, 0.4);
 }
 
 /* Glass Card */
@@ -274,7 +315,7 @@ body {
     }
     
     .nav-btn {
-        font-size: 1.5rem;
+        font-size: 2.22rem; /* Mobilde de büyütüldü */
     }
     
     .schedule-grid {
@@ -455,3 +496,28 @@ body {
 
 .admin-circle-btn.edit:hover { background: var(--accent-cyan); color: var(--bg-dark); }
 .admin-circle-btn.delete:hover { background: #ef4444; color: white; }
+
+/* Geçmiş toplantılar için stil */
+.is-past {
+    opacity: 0.6;
+    filter: grayscale(0.4);
+}
+
+.is-past .speaker-line,
+.is-past .card-topics,
+.is-past .card-date {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+}
+
+.is-past .card-time-pill {
+    background: #4a5568 !important; /* Daha sönük bir renk */
+    color: #a0aec0 !important;
+    box-shadow: none !important;
+    text-decoration: line-through;
+}
+
+.is-past .divider {
+    background: #4a5568 !important;
+    box-shadow: none !important;
+}

@@ -66,6 +66,12 @@
                     <i class="fa-solid fa-right-from-bracket"></i> Çıkış
                 </button>
             </div>
+
+            <!-- Tab Switcher -->
+            <div class="tabs-container">
+                <button class="tab-btn active" id="tabLab">Laboratuvar Eğitimleri</button>
+                <button class="tab-btn" id="tabOuter">Kurum Dışı Eğitimler</button>
+            </div>
         </header>
 
         <main class="schedule-grid" id="scheduleContainer">
@@ -107,8 +113,14 @@
                 <label class="modal-label"><i class="fa-solid fa-microscope"></i> Konular (Virgülle Ayırın)</label>
                 <textarea id="eventTopics" placeholder="Örn: MAKALE, OLGU, GENEL PATOLOJİ" class="modal-input" rows="2"></textarea>
                 
+                <label class="modal-label"><i class="fa-solid fa-layer-group"></i> Eğitim Türü</label>
+                <select id="eventType" class="modal-input">
+                    <option value="lab">Laboratuvar Eğitimi</option>
+                    <option value="outer">Kurum Dışı Eğitim</option>
+                </select>
+                
                 <input type="hidden" id="editEventId" value="">
-                <button id="saveEventBtn" class="modal-btn"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
+                <button id="saveEventBtn" class="modal-btn" style="margin-top:2rem;"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
             </div>
         </div>
     </div>
