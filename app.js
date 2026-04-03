@@ -1977,10 +1977,14 @@ window.addEventListener('beforeinstallprompt', (e) => {
 document.addEventListener('DOMContentLoaded', init);
 
 // Image Overlay Logic
+let overlayScale = 1;
+
 function openImageOverlay(src) {
     const overlay = document.getElementById('imageOverlay');
     const overlayImg = document.getElementById('overlayImg');
     if (overlay && overlayImg) {
+        overlayScale = 1;
+        overlayImg.style.transform = `scale(${overlayScale})`;
         overlayImg.src = src;
         overlay.style.display = 'flex';
     }
@@ -1994,10 +1998,27 @@ function closeImageOverlay() {
 // Global'e ekle (onclick için)
 window.openImageOverlay = openImageOverlay;
 
-// Overlay kapatma eventlerini ekle
-document.addEventListener('click', (e) => {
+// Overlay kapatma ve Zoom eventlerini ekle
+document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('imageOverlay');
-    if (e.target.classList.contains('close-overlay') || e.target === overlay) {
-        closeImageOverlay();
+    const overlayImg = document.getElementById('overlayImg');
+
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('close-overlay') || e.target === overlay) {
+                closeImageOverlay();
+            }
+        });
+
+        // Zoom (Mouse Wheel)
+        overlay.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            overlayScale += delta;
+            overlayScale = Math.min(Math.max(0.5, overlayScale), 4); // Min 0.5x, Max 4x
+            if (overlayImg) {
+                overlayImg.style.transform = `scale(${overlayScale})`;
+            }
+        }, { passive: false });
     }
 });
