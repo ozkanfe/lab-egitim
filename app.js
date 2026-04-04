@@ -2022,7 +2022,7 @@ window.openFrozenModal = function (id = null) {
 };
 
 window.deleteFrozen = async function (id) {
-    if (confirm('Bu frozen kaydını silmek istediğinize emin misiniz?')) {
+    if (await customConfirm('FROZEN SİL', 'Bu frozen kaydını silmek istediğinize emin misiniz?')) {
         if (supabaseClient) {
             const { error } = await supabaseClient.from('frozen_events').delete().eq('id', id);
             if (error) { showToast(error.message, true); return; }
@@ -2142,6 +2142,36 @@ function setupEventListeners() {
     });
 
     if (refreshMsgsBtn) refreshMsgsBtn.addEventListener('click', fetchAndRenderMessages);
+
+    const clearMsgsBtn = document.getElementById('clearAllMessagesBtn');
+    if (clearMsgsBtn) clearMsgsBtn.addEventListener('click', clearAllMessages);
+
+    // Initial check for unread messages
+    checkUnreadMessages();
+}
+
+// === UNREAD MESSAGES LOGIC ===
+async function checkUnreadMessages() {
+    if (!supabaseClient) return;
+
+    const lastSeen = localStorage.getItem('lastSeenMsgTime') || '2000-01-01T00:00:00Z';
+    
+    const { data, count, error } = await supabaseClient
+        .from('user_messages')
+        .select('*', { count: 'exact', head: true })
+        .gt('created_at', lastSeen);
+
+    if (error) return;
+
+    const badge = document.getElementById('unreadMessagesBadge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
 }
 
 window.openMessagesModal = function () {
@@ -2149,6 +2179,11 @@ window.openMessagesModal = function () {
     if (modal) {
         modal.style.display = 'flex';
         fetchAndRenderMessages();
+        
+        // Mark as read
+        localStorage.setItem('lastSeenMsgTime', new Date().toISOString());
+        const badge = document.getElementById('unreadMessagesBadge');
+        if (badge) badge.style.display = 'none';
     }
 };
 
@@ -2193,7 +2228,7 @@ async function fetchAndRenderMessages() {
 }
 
 window.deleteMessage = async function (id) {
-    if (!confirm('Bu mesajı silmek istediğinize emin misiniz?')) return;
+    if (!(await customConfirm('MESAJI SİL', 'Bu mesajı silmek istediğinize emin misiniz?'))) return;
 
     if (supabaseClient) {
         const { error } = await supabaseClient.from('user_messages').delete().eq('id', id);
@@ -2204,6 +2239,21 @@ window.deleteMessage = async function (id) {
         const listContainer = document.getElementById('messagesListContainer');
         if (listContainer && listContainer.children.length === 0) {
             listContainer.innerHTML = '<div style="color:var(--text-muted); padding:2rem; text-align:center;">Henüz mesaj yok.</div>';
+        }
+    }
+};
+
+window.clearAllMessages = async function () {
+    if (!supabaseClient) return;
+    
+    if (await customConfirm('TÜMÜNÜ TEMİZLE', 'Tüm mesajları kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+        const { error } = await supabaseClient.from('user_messages').delete().neq('id', 0); // Delete all
+        
+        if (error) {
+            showToast('Hata: ' + error.message, true);
+        } else {
+            showToast('Tüm mesajlar temizlendi.');
+            fetchAndRenderMessages();
         }
     }
 };
@@ -2370,7 +2420,7 @@ function openEditModal(id) {
 // Make accessible to onclick
 window.openEditModal = openEditModal;
 window.deleteSession = async function (id) {
-    if (confirm('Eğitimi programdan silmek istediğinize emin misiniz?')) {
+    if (await customConfirm('EĞİTİMİ SİL', 'Eğitimi programdan silmek istediğinize emin misiniz?')) {
         if (supabaseClient) {
             const { error } = await supabaseClient.from('schedule_events').delete().eq('id', id);
             if (error) { showToast('Silme hatası: ' + error.message, true); return; }
@@ -2585,6 +2635,53 @@ function showToast(message, isError = false) {
     }
 
     setTimeout(() => {
-        toast.classList.remove('active');
+        if (toast) toast.classList.remove('active');
     }, 2500);
 }
+
+// === CUSTOM CONFIRM MODAL LOGIC ===
+let confirmPromiseResolve = null;
+
+window.customConfirm = function (title, message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('customConfirmModal');
+        const titleEl = document.getElementById('confirmTitle');
+        const msgEl = document.getElementById('confirmMessage');
+        
+        if (modal && titleEl && msgEl) {
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            modal.classList.add('active');
+            confirmPromiseResolve = resolve;
+        } else {
+            // Fallback to native confirm if modal not found
+            resolve(window.confirm(message));
+        }
+    });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnYes = document.getElementById('confirmYes');
+    const btnNo = document.getElementById('confirmNo');
+    const modal = document.getElementById('customConfirmModal');
+
+    if (btnYes) btnYes.addEventListener('click', () => {
+        if (modal) modal.classList.remove('active');
+        if (confirmPromiseResolve) confirmPromiseResolve(true);
+    });
+
+    if (btnNo) btnNo.addEventListener('click', () => {
+        if (modal) modal.classList.remove('active');
+        if (confirmPromiseResolve) confirmPromiseResolve(false);
+    });
+
+    // Close on overlay click
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                if (confirmPromiseResolve) confirmPromiseResolve(false);
+            }
+        });
+    }
+});
