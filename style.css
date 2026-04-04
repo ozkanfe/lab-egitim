@@ -764,3 +764,40 @@ body {
     font-size: 1.5rem;
     color: var(--accent-cyan);
 }
+
+/* Mobile Fixes for Tabs and Actions */
+@media (max-width: 768px) {
+    .tabs-container {
+        gap: 8px;
+        flex-wrap: wrap; /* Sığmazsa alt satıra geçsin */
+        justify-content: center;
+        padding: 0 10px;
+    }
+    
+    .tab-btn {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .top-actions {
+        flex-wrap: wrap;
+        gap: 8px !important;
+    }
+
+    .install-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .tab-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.7rem;
+    }
+    
+    .top-actions .install-btn span {
+        display: none; /* Mobilde çok dar ekranlarda yazıları gizle, sadece ikon kalsın derseniz butona span eklemelisiniz. Şu an yazılar direkt içinde. */
+    }
+}
