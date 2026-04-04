@@ -541,6 +541,8 @@ body {
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(5px);
+    overflow: hidden;
+    touch-action: none;
 }
 
 .image-overlay img {

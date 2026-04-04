@@ -2341,13 +2341,19 @@ document.addEventListener('DOMContentLoaded', init);
 
 // Image Overlay Logic
 let overlayScale = 1;
+let translateX = 0;
+let translateY = 0;
+let isDragging = false;
+let startX, startY;
 
 function openImageOverlay(src) {
     const overlay = document.getElementById('imageOverlay');
     const overlayImg = document.getElementById('overlayImg');
     if (overlay && overlayImg) {
         overlayScale = 1;
-        overlayImg.style.transform = `scale(${overlayScale})`;
+        translateX = 0;
+        translateY = 0;
+        overlayImg.style.transform = `translate(0px, 0px) scale(1)`;
         overlayImg.src = src;
         overlay.style.display = 'flex';
     }
@@ -2358,12 +2364,9 @@ function closeImageOverlay() {
     const overlayImg = document.getElementById('overlayImg');
     if (overlay) {
         overlay.style.display = 'none';
-        // Reset scale and origin on close
         overlayScale = 1;
-        if (overlayImg) {
-            overlayImg.style.transform = `scale(1)`;
-            overlayImg.style.transformOrigin = 'center center';
-        }
+        translateX = 0;
+        translateY = 0;
     }
 }
 
@@ -2375,91 +2378,96 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('imageOverlay');
     const overlayImg = document.getElementById('overlayImg');
 
-    if (overlay) {
+    if (overlay && overlayImg) {
+        const updateTransform = (transition = true) => {
+            overlayImg.style.transition = transition ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none';
+            overlayImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${overlayScale})`;
+        };
+
         overlay.addEventListener('click', (e) => {
             if (e.target.classList.contains('close-overlay') || e.target === overlay) {
                 closeImageOverlay();
             }
         });
 
-        // Zoom (Mouse Wheel) + Follow Mouse
-        overlayImg.style.transition = 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-        overlayImg.style.cursor = 'zoom-in';
-
+        // Mouse Wheel Zoom
         overlay.addEventListener('wheel', (e) => {
             e.preventDefault();
             const delta = e.deltaY > 0 ? 0.8 : 1.25;
-            const newScale = Math.min(Math.max(1, overlayScale * delta), 12);
+            const newScale = Math.min(Math.max(1, overlayScale * delta), 15);
             
             if (newScale !== overlayScale) {
-                const rect = overlayImg.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / (rect.width / overlayScale)) * 100;
-                const y = ((e.clientY - rect.top) / (rect.height / overlayScale)) * 100;
-                
-                overlayImg.style.transformOrigin = `${x}% ${y}%`;
-                overlayScale = newScale;
-                overlayImg.style.transform = `scale(${overlayScale})`;
-                overlayImg.style.cursor = overlayScale > 1 ? 'zoom-out' : 'zoom-in';
+                if (newScale <= 1.05) { 
+                    overlayScale = 1; translateX = 0; translateY = 0;
+                } else {
+                    overlayScale = newScale;
+                }
+                updateTransform(true);
             }
         }, { passive: false });
 
-        // Reset zoom on double click
-        overlay.addEventListener('dblclick', () => {
-            overlayScale = 1;
-            overlayImg.style.transform = `scale(1)`;
-            overlayImg.style.transformOrigin = 'center center';
-            overlayImg.style.cursor = 'zoom-in';
+        // Mouse Drag / Pan
+        overlay.addEventListener('mousedown', (e) => {
+            if (overlayScale > 1) {
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                overlayImg.style.cursor = 'grabbing';
+            }
         });
 
-        // Touch Zoom (Pinch)
-        let initialDistance = 0;
-        let initialScale = 1;
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging && overlayScale > 1) {
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                updateTransform(false);
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            if (overlayImg) overlayImg.style.cursor = overlayScale > 1 ? 'move' : 'zoom-in';
+        });
+
+        // Touch Pan & Zoom
+        let initialDist = 0;
+        let lastTouchX = 0, lastTouchY = 0;
 
         overlay.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                initialDistance = Math.hypot(
-                    e.touches[0].pageX - e.touches[1].pageX,
-                    e.touches[0].pageY - e.touches[1].pageY
-                );
-                initialScale = overlayScale;
-                
-                const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
-                const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
-                const rect = overlayImg.getBoundingClientRect();
-                const x = ((centerX - rect.left) / (rect.width / overlayScale)) * 100;
-                const y = ((centerY - rect.top) / (rect.height / overlayScale)) * 100;
-                overlayImg.style.transformOrigin = `${x}% ${y}%`;
+            if (e.touches.length === 1 && overlayScale > 1) {
+                lastTouchX = e.touches[0].clientX - translateX;
+                lastTouchY = e.touches[0].clientY - translateY;
+            } else if (e.touches.length === 2) {
+                initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
             }
         }, { passive: true });
 
         overlay.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2) {
+            if (e.touches.length === 1 && overlayScale > 1) {
+                translateX = e.touches[0].clientX - lastTouchX;
+                translateY = e.touches[0].clientY - lastTouchY;
+                updateTransform(false);
+            } else if (e.touches.length === 2) {
                 e.preventDefault();
-                const dist = Math.hypot(
-                    e.touches[0].pageX - e.touches[1].pageX,
-                    e.touches[0].pageY - e.touches[1].pageY
-                );
-                const zoomFactor = dist / initialDistance;
-                overlayScale = Math.min(Math.max(1, initialScale * zoomFactor), 8);
-                if (overlayImg) {
-                    overlayImg.style.transform = `scale(${overlayScale})`;
-                    overlayImg.style.transition = 'none'; // Re-enable during move for responsiveness
+                const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                const zoomFactor = dist / initialDist;
+                const newScale = Math.min(Math.max(1, overlayScale * zoomFactor), 15);
+                if (newScale <= 1.05) {
+                    overlayScale = 1; translateX = 0; translateY = 0;
+                } else {
+                    overlayScale = newScale;
                 }
+                initialDist = dist;
+                updateTransform(false);
             }
         }, { passive: false });
 
-        overlay.addEventListener('touchend', () => {
-            overlayImg.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-            // "zoomu bırakınca normal boyuna geri dönsün"
-            if (overlayScale > 1) {
-                setTimeout(() => {
-                    if (overlayScale > 1) {
-                        overlayScale = 1;
-                        overlayImg.style.transform = `scale(1)`;
-                        overlayImg.style.transformOrigin = 'center center';
-                    }
-                }, 1200); // Biraz daha bekleyip sıfırla
-            }
+        // Double Click to Reset
+        overlay.addEventListener('dblclick', () => {
+            overlayScale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform(true);
         });
     }
 });
