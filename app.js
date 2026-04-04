@@ -1682,11 +1682,16 @@ function showBrowserNotification(title, text) {
                     badge: 'icon-192.png',
                     vibrate: [200, 100, 200],
                     tag: 'new-message',
-                    renotify: true
+                    renotify: true,
+                    requireInteraction: true 
                 });
             });
         } else {
-            new Notification(title, { body: text, icon: 'icon-192.png' });
+            const n = new Notification(title, { 
+                body: text, 
+                icon: 'https://via.placeholder.com/192x192/0ce3e3/ffffff?text=LE' 
+            });
+            n.onclick = function() { window.focus(); };
         }
     } else if (Notification.permission !== "denied") {
         Notification.requestPermission().then(permission => {
