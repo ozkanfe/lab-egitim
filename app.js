@@ -2379,9 +2379,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlayImg = document.getElementById('overlayImg');
 
     if (overlay && overlayImg) {
+        let ticking = false;
+        
         const updateTransform = (transition = true) => {
-            overlayImg.style.transition = transition ? 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none';
-            overlayImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${overlayScale})`;
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    overlayImg.style.transition = transition ? 'transform 0.25s cubic-bezier(0.2, 0, 0.2, 1)' : 'none';
+                    overlayImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${overlayScale})`;
+                    ticking = false;
+                });
+                ticking = true;
+            }
         };
 
         overlay.addEventListener('click', (e) => {
