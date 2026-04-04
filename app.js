@@ -1652,23 +1652,40 @@ async function init() {
         Notification.requestPermission();
     }
     
-    // Realtime Mesaj Dinleyici (Yeni mesaj geldiğinde haber ver)
     if (supabaseClient) {
-        supabaseClient
-            .channel('message-updates')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_messages' }, payload => {
-                if (isAdmin) {
-                    showBrowserNotification("Yeni Mesaj!", payload.new.content);
-                    // Eğer mesajlar penceresi açıksa listeyi yenile
-                    const modal = document.getElementById('viewMessagesModal');
-                    if (modal && modal.style.display === 'flex') {
-                        fetchAndRenderMessages();
-                    }
-                }
-            })
-            .subscribe();
+        // Realtime Mesaj Dinleyici (Hızlı Yeniden Bağlanma Destekli)
+        const setupRealtime = () => {
+            if (window.msgChannel) window.msgChannel.unsubscribe();
             
-        // Web Push Aboneliği (Gerçek Arkaplan Bildirimleri İçin)
+            window.msgChannel = supabaseClient
+                .channel('message-updates')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_messages' }, payload => {
+                    if (isAdmin) {
+                        showBrowserNotification("Yeni Mesaj!", payload.new.content);
+                        const modal = document.getElementById('viewMessagesModal');
+                        if (modal && modal.style.display === 'flex') fetchAndRenderMessages();
+                    }
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') console.log('✅ Realtime Bağlandı');
+                    if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                        console.log('⚠️ Bağlantı koptu, yeniden deneniyor...');
+                        setTimeout(setupRealtime, 2000);
+                    }
+                });
+        };
+
+        setupRealtime();
+
+        // Ekran açıldığında veya uygulamaya dönüldüğünde bağlantıyı tazele
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                console.log('📱 Uygulama uyandı, bağlantı tazeleniyor...');
+                setupRealtime();
+            }
+        });
+            
+        // Web Push Aboneliği
         if (isAdmin && 'serviceWorker' in navigator) {
             setupPushSubscription();
         }
