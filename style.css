@@ -577,6 +577,7 @@ body {
     background: linear-gradient(135deg, rgba(20, 241, 242, 0.15) 0%, rgba(20, 241, 242, 0.05) 100%);
     border: 2px solid var(--accent-cyan);
     box-shadow: 0 0 30px rgba(20, 241, 242, 0.2);
+    position: relative; /* REQUIRED for centering the absolute badge */
 }
 
 .frozen-badge {
