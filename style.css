@@ -123,8 +123,10 @@ body {
 }
 
 .install-btn:hover {
-    background: var(--accent-cyan);
-    color: var(--bg-dark);
+    background: var(--accent-cyan) !important; /* Force background change even for transparent inline styles */
+    color: var(--bg-dark) !important;
+    box-shadow: 0 0 20px rgba(20, 241, 242, 0.6);
+    transform: translateY(-2px);
 }
 
 
