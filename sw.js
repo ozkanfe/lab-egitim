@@ -6,7 +6,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-    // Eski önbellekleri(cache) temizle
+    event.waitUntil(self.clients.claim()); 
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(

@@ -2566,6 +2566,13 @@ function showToast(message, isError = false) {
 
     toast.classList.add('active');
     
+    // Web Bildirim İsteği Check (Uyanıklık için)
+    if (!isError && Notification.permission === 'granted') {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.update(); // Kaydı güncelle ki uyumaya gitmesin
+        });
+    }
+
     setTimeout(() => {
         toast.classList.remove('active');
     }, 2500);
