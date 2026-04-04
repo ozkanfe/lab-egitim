@@ -1711,7 +1711,7 @@ async function setupPushSubscription() {
 
         // Eğer abonelik yoksa veya key değiştiyse tazeleyelim
         if (!subscription) {
-            const vapidPublicKey = 'BAnU04YmXvX7Y2Z0Z1X2Y3Z4X5Y6Z7X8Y9Z0X1Y2Z3X4Y5Z6X7Y8Z9X0Y1Z2';
+            const vapidPublicKey = 'BGoqTCH1kExbtdwP4-9XB-TMzifHjpCNR3ATTdyEWan4ckbAGNezCSNvyL4L9khEH2m8_HVHlA1usHBUnaMPq-E';
             const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
             subscription = await registration.pushManager.subscribe({
