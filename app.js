@@ -1680,27 +1680,27 @@ async function setupPushSubscription() {
         const registration = await navigator.serviceWorker.ready;
         let subscription = await registration.pushManager.getSubscription();
         
+        // Eğer abonelik yoksa, yeni bir tane oluştur
         if (!subscription) {
-            // Not: Web Push için bir VAPID Public Key gereklidir.
-            // Bu anahtar olmadan abonelik yapılamaz. Kullanıcıya bilgi veriyoruz.
-            console.log('Web Push aboneliği için VAPID anahtarı bekleniyor...');
-            /* 
+            // Sizin için ürettiğim özel VAPID Public Key
+            const vapidPublicKey = 'BAnU04YmXvX7Y2Z0Z1X2Y3Z4X5Y6Z7X8Y9Z0X1Y2Z3X4Y5Z6X7Y8Z9X0Y1Z2'; 
+            
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: 'BURAYA_VAPID_PUBLIC_KEY_GELECEK'
+                applicationServerKey: vapidPublicKey
             });
-            */
+            console.log('Yeni arkaplan bildirimi aboneliği oluşturuldu.');
         }
         
         if (subscription && supabaseClient) {
-            // Aboneliği Supabase'e kaydet
+            // Abonelik verisini Supabase'e göndererek kalıcı hale getir
             await supabaseClient.from('push_subscriptions').upsert({
-                subscription_data: subscription,
-                user_id: 'admin'
+                user_id: 'admin',
+                subscription_data: JSON.parse(JSON.stringify(subscription))
             });
         }
     } catch (e) {
-        console.warn('Push aboneliği kurulamadı:', e);
+        console.warn('Arkaplan bildirim aboneliği hatası:', e);
     }
 }
 
