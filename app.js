@@ -2383,13 +2383,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Zoom (Mouse Wheel) + Follow Mouse
-        overlayImg.style.transition = 'transform 0.1s ease-out';
+        overlayImg.style.transition = 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
         overlayImg.style.cursor = 'zoom-in';
 
         overlay.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.3 : 0.3;
-            const newScale = Math.min(Math.max(1, overlayScale + delta), 8);
+            const delta = e.deltaY > 0 ? 0.8 : 1.25;
+            const newScale = Math.min(Math.max(1, overlayScale * delta), 12);
             
             if (newScale !== overlayScale) {
                 const rect = overlayImg.getBoundingClientRect();
@@ -2449,15 +2449,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
 
         overlay.addEventListener('touchend', () => {
-            overlayImg.style.transition = 'transform 0.3s ease-out';
-            // Snap back if it was a quick pinch or just reset if requested
+            overlayImg.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
             // "zoomu bırakınca normal boyuna geri dönsün"
             if (overlayScale > 1) {
                 setTimeout(() => {
-                    overlayScale = 1;
-                    overlayImg.style.transform = `scale(1)`;
-                    overlayImg.style.transformOrigin = 'center center';
-                }, 1000); // Give user a second to see it, then reset
+                    if (overlayScale > 1) {
+                        overlayScale = 1;
+                        overlayImg.style.transform = `scale(1)`;
+                        overlayImg.style.transformOrigin = 'center center';
+                    }
+                }, 1200); // Biraz daha bekleyip sıfırla
             }
         });
     }
