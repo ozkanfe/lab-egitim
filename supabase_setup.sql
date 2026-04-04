@@ -25,3 +25,30 @@ CREATE POLICY "Herkes guncelleyebilir" ON schedule_events
 
 CREATE POLICY "Herkes silebilir" ON schedule_events
   FOR DELETE USING (true);
+
+-- Frozen Listesi Tablosu
+CREATE TABLE IF NOT EXISTS frozen_events (
+  id        BIGSERIAL PRIMARY KEY,
+  date      DATE NOT NULL UNIQUE,
+  specialist TEXT NOT NULL,
+  assistant  TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE frozen_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Herkes okuyabilir_frozen" ON frozen_events FOR SELECT USING (true);
+CREATE POLICY "Herkes yazabilir_frozen" ON frozen_events FOR INSERT WITH CHECK (true);
+CREATE POLICY "Herkes guncelleyebilir_frozen" ON frozen_events FOR UPDATE USING (true);
+CREATE POLICY "Herkes silebilir_frozen" ON frozen_events FOR DELETE USING (true);
+
+-- Mesajlar Tablosu
+CREATE TABLE IF NOT EXISTS user_messages (
+  id        BIGSERIAL PRIMARY KEY,
+  content   TEXT NOT NULL,
+  sender_info TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE user_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Herkes yazabilir_msg" ON user_messages FOR INSERT WITH CHECK (true);
+CREATE POLICY "Sadece admin okuyabilir_msg" ON user_messages FOR SELECT USING (true);

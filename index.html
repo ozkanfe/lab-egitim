@@ -65,12 +65,19 @@
                 <button class="install-btn admin-action-btn" id="adminLogoutBtn" style="display: none; background:transparent; border:1px solid #ef4444; color:#ef4444;">
                     <i class="fa-solid fa-right-from-bracket"></i> Çıkış
                 </button>
+                <button class="install-btn admin-action-btn" id="viewMessagesBtn" onclick="openMessagesModal()" style="display: none; background:rgba(255,255,255,0.1); border:1px solid var(--accent-cyan); color:var(--accent-cyan);">
+                    <i class="fa-solid fa-inbox"></i> Mesajlar
+                </button>
+                <button class="install-btn" id="openMessageModalBtn" style="background:rgba(255,255,255,0.1); border:1px solid var(--glass-border); color:#fff;">
+                    <i class="fa-solid fa-envelope"></i> Bildir
+                </button>
             </div>
 
             <!-- Tab Switcher -->
             <div class="tabs-container">
                 <button class="tab-btn active" id="tabLab">KURUM İÇİ EĞİTİMLER</button>
                 <button class="tab-btn" id="tabOuter">Kurum Dışı Eğitimler</button>
+                <button class="tab-btn" id="tabFrozen">Frozen Listesi</button>
             </div>
         </header>
 
@@ -127,6 +134,61 @@
                 <button id="saveEventBtn" class="modal-btn" style="margin-top:2rem;"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
             </div>
         </div>
+
+        <!-- Frozen Ekle/Düzenle Modal -->
+        <div id="frozenModal" class="modal-overlay" style="display:none;">
+            <div class="glass-modal">
+                <button class="close-modal" id="closeFrozenBtn"><i class="fa-solid fa-xmark"></i></button>
+                <h2 id="frozenModalTitle" style="font-size:1.2rem; letter-spacing:2px; margin-bottom:1.5rem;">FROZEN EKLE</h2>
+                
+                <label class="modal-label"><i class="fa-regular fa-calendar"></i> Tarih</label>
+                <input type="date" id="frozenDate" class="modal-input" required>
+                
+                <label class="modal-label"><i class="fa-solid fa-user-tie"></i> Uzman</label>
+                <input type="text" id="frozenSpecialist" placeholder="Uzman Adı" class="modal-input">
+                
+                <label class="modal-label"><i class="fa-solid fa-user-doctor"></i> Asistan</label>
+                <input type="text" id="frozenAssistant" placeholder="Asistan Adı" class="modal-input">
+                
+                <input type="hidden" id="editFrozenId" value="">
+                <button id="saveFrozenBtn" class="modal-btn" style="margin-top:2rem;"><i class="fa-solid fa-floppy-disk"></i> Kaydet</button>
+            </div>
+        </div>
+
+        <!-- Mesaj Gönder Modal -->
+        <div id="messageModal" class="modal-overlay" style="display:none;">
+            <div class="glass-modal">
+                <button class="close-modal" id="closeMessageBtn"><i class="fa-solid fa-xmark"></i></button>
+                <h2 style="font-size:1.2rem; letter-spacing:2px; margin-bottom:1.5rem;">BİLDİRİM / MESAJ</h2>
+                <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.5rem;">Değişiklikleri veya mesajlarınızı buradan iletebilirsiniz.</p>
+                
+                <textarea id="messageContent" placeholder="Mesajınız..." class="modal-input" rows="4"></textarea>
+                <input type="text" id="senderInfo" placeholder="İsminiz (Opsiyonel)" class="modal-input">
+                
+                <button id="sendMessageBtn" class="modal-btn" style="margin-top:2rem;"><i class="fa-solid fa-paper-plane"></i> Gönder</button>
+            </div>
+        </div>
+
+        <!-- Mesajları Gör Modal (Admin) -->
+        <div id="viewMessagesModal" class="modal-overlay" style="display:none;">
+            <div class="glass-modal" style="max-width:800px; max-height:80vh; overflow:hidden; display:flex; flex-direction:column;">
+                <button class="close-modal" id="closeViewMessagesBtn"><i class="fa-solid fa-xmark"></i></button>
+                <h2 style="font-size:1.2rem; letter-spacing:2px; margin-bottom:1.5rem;">GELEN MESAJLAR</h2>
+                
+                <div id="messagesListContainer" style="flex:1; overflow-y:auto; padding-right:10px; margin-bottom:1rem; text-align:left;">
+                    <div class="loading-state"><div class="spinner"></div></div>
+                </div>
+                
+                <button id="refreshMessagesBtn" class="modal-btn" style="margin-top:auto;"><i class="fa-solid fa-rotate"></i> Yenile</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Custom Toast -->
+    <div id="toast" class="toast-notification">
+        <i class="fa-solid fa-check-circle"></i>
+        <span id="toastMessage"></span>
     </div>
 
     <!-- Image Overlay Modal -->

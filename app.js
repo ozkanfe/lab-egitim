@@ -1460,6 +1460,18 @@ async function fetchDataFromSupabase() {
     } catch(e) { console.error('Fetch error:', e); return null; }
 }
 
+async function fetchFrozenFromSupabase() {
+    if (!supabaseClient) return [];
+    try {
+        const { data, error } = await supabaseClient
+            .from('frozen_events')
+            .select('*')
+            .order('date', { ascending: true });
+        if (error) { console.error('Frozen fetch error:', error); return []; }
+        return data;
+    } catch(e) { console.error('Frozen fetch error:', e); return []; }
+}
+
 // Eksik değişkenler (önceki düzenlemede silindi)
 let currentWeekOffset = 0;
 let baseDate = new Date();
@@ -1468,6 +1480,7 @@ let activeTab = 'lab';
 
 // appData başlangıçta mockData, Supabase'den gelince güncellenir
 let appData = [...mockData];
+let frozenData = [];
 
 const container = document.getElementById('scheduleContainer');
 const btnPrevWeek = document.getElementById('prevWeek');
@@ -1626,9 +1639,62 @@ async function init() {
     scheduleAutoRefresh();
 
     populateMonthSelect();
+    
+    // Frozen verisini de çek
+    frozenData = await fetchFrozenFromSupabase();
+    
     renderSchedule();
     setupEventListeners();
     setupAdminListeners();
+
+    // Browser bildirim izni iste
+    if (isAdmin && "Notification" in window && Notification.permission !== "denied" && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+    
+    // Realtime Mesaj Dinleyici (Yeni mesaj geldiğinde haber ver)
+    if (supabaseClient) {
+        supabaseClient
+            .channel('message-updates')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_messages' }, payload => {
+                if (isAdmin) {
+                    showBrowserNotification("Yeni Mesaj!", payload.new.content);
+                    // Eğer mesajlar penceresi açıksa listeyi yenile
+                    const modal = document.getElementById('viewMessagesModal');
+                    if (modal && modal.style.display === 'flex') {
+                        fetchAndRenderMessages();
+                    }
+                }
+            })
+            .subscribe();
+    }
+}
+
+function showBrowserNotification(title, text) {
+    if (!("Notification" in window)) return;
+    
+    if (Notification.permission === "granted") {
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification(title, {
+                    body: text,
+                    icon: 'icon-192.png',
+                    badge: 'icon-192.png',
+                    vibrate: [200, 100, 200],
+                    tag: 'new-message',
+                    renotify: true
+                });
+            });
+        } else {
+            new Notification(title, { body: text, icon: 'icon-192.png' });
+        }
+    } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                showBrowserNotification(title, text);
+            }
+        });
+    }
 }
 
 function refreshAdminUI() {
@@ -1636,10 +1702,12 @@ function refreshAdminUI() {
         if(adminLoginBtn) adminLoginBtn.style.display = 'none';
         if(adminLogoutBtn) adminLogoutBtn.style.display = 'block';
         if(addEventBtn) addEventBtn.style.display = 'block';
+        if(document.getElementById('viewMessagesBtn')) document.getElementById('viewMessagesBtn').style.display = 'block';
     } else {
         if(adminLoginBtn) adminLoginBtn.style.display = 'block';
         if(adminLogoutBtn) adminLogoutBtn.style.display = 'none';
         if(addEventBtn) addEventBtn.style.display = 'none';
+        if(document.getElementById('viewMessagesBtn')) document.getElementById('viewMessagesBtn').style.display = 'none';
     }
 }
 
@@ -1659,6 +1727,11 @@ function renderSchedule() {
             const inTab = (session.category || 'lab') === activeTab;
             return inWeek && inTab;
         });
+
+        if (activeTab === 'frozen') {
+            renderFrozen();
+            return;
+        }
 
         if (currentWeekData.length === 0) {
             container.innerHTML = `<div style="text-align:center; color:var(--text-muted); width: 100%; padding: 4rem 0; font-size:1.1rem;">Bu haftaya ait eğitim kaydı bulunamadı.</div>`;
@@ -1750,6 +1823,149 @@ function updateWeekText(start, end) {
     weekRangeDisplay.textContent = `${startStr} - ${endStr}`;
 }
 
+function renderFrozen() {
+    if(!container) return;
+    container.innerHTML = '';
+    
+    // Sort local frozen data by date
+    frozenData.sort((a,b) => new Date(a.date) - new Date(b.date));
+    
+    // 1. Bugüne ait olanı bul
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayFrozen = frozenData.find(f => f.date === todayStr);
+    
+    let html = '';
+    
+    // Admin Ekle Butonu (Sadece Frozen sekmesinde ve adminseniz)
+    if (isAdmin) {
+        html += `
+            <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-bottom: 2rem;">
+                <button class="modal-btn" style="max-width:300px;" onclick="openFrozenModal()">
+                    <i class="fa-solid fa-plus"></i> Yeni Frozen Ekle
+                </button>
+            </div>
+        `;
+    }
+
+    // Bugunkü Frozen Kartı
+    if (todayFrozen) {
+        html += `
+            <div class="frozen-today-container">
+                <div class="glass-card frozen-today-card" style="width:100%; max-width:600px;">
+                    <div class="frozen-badge">Bugünkü Frozen Ekibi</div>
+                    ${isAdmin ? `
+                        <div class="admin-card-actions">
+                            <button class="admin-circle-btn edit" onclick="openFrozenModal(${todayFrozen.id})" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                            <button class="admin-circle-btn delete" onclick="deleteFrozen(${todayFrozen.id})" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    ` : ''}
+                    <div class="frozen-team">
+                        <div class="frozen-member">
+                            <span class="frozen-label">UZMAN</span>
+                            <span class="frozen-name">${todayFrozen.specialist}</span>
+                        </div>
+                        <div class="divider" style="margin: 0.5rem 0;"></div>
+                        <div class="frozen-member">
+                            <span class="frozen-label">ASİSTAN</span>
+                            <span class="frozen-name">${todayFrozen.assistant}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="frozen-today-container">
+                <div class="glass-card" style="width:100%; max-width:600px; padding: 2rem; opacity: 0.7; text-align:center;">
+                    <i class="fa-solid fa-circle-info" style="font-size:2rem; color:var(--accent-cyan); margin-bottom:1rem;"></i>
+                    <p>Bugün için frozen ekibi henüz tanımlanmamış.</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 2. Aylık Liste (Sadece baseDate'in ayına ait olanlar)
+    const currentMonth = baseDate.getMonth();
+    const currentYear = baseDate.getFullYear();
+    const monthlyData = frozenData.filter(f => {
+        const d = new Date(f.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+    
+    html += `<div class="monthly-frozen-title"><i class="fa-solid fa-calendar-days"></i> ${["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"][currentMonth]} LİSTESİ</div>`;
+    
+    if (monthlyData.length === 0) {
+        html += `<div style="grid-column: 1 / -1; text-align:center; padding: 3rem; color:var(--text-muted);">Henüz bir liste bulunmuyor.</div>`;
+    } else {
+        monthlyData.forEach(frz => {
+            const dateObj = new Date(frz.date);
+            const dateDisplay = `${dateObj.getDate()} ${["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"][dateObj.getMonth()]}`;
+            
+            html += `
+                <div class="glass-card frozen-row-card">
+                    <div class="frozen-row-date">${dateDisplay}</div>
+                    <div class="frozen-row-info">
+                        <div class="frozen-row-names">
+                            <span style="color:var(--accent-cyan)">U:</span> ${frz.specialist}
+                        </div>
+                        <div class="frozen-row-names">
+                            <span style="color:var(--accent-cyan)">A:</span> ${frz.assistant}
+                        </div>
+                    </div>
+                    ${isAdmin ? `
+                        <div style="display:flex; gap:8px; margin-left:15px;">
+                            <button class="admin-circle-btn edit" onclick="openFrozenModal(${frz.id})" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                            <button class="admin-circle-btn delete" onclick="deleteFrozen(${frz.id})" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+window.openFrozenModal = function(id = null) {
+    const modal = document.getElementById('frozenModal');
+    const title = document.getElementById('frozenModalTitle');
+    const idField = document.getElementById('editFrozenId');
+    const dateField = document.getElementById('frozenDate');
+    const specField = document.getElementById('frozenSpecialist');
+    const asstField = document.getElementById('frozenAssistant');
+    
+    if (id) {
+        const item = frozenData.find(f => f.id == id);
+        if (item) {
+            title.textContent = 'FROZEN DÜZENLE';
+            idField.value = item.id;
+            dateField.value = item.date;
+            specField.value = item.specialist;
+            asstField.value = item.assistant;
+        }
+    } else {
+        title.textContent = 'YENİ FROZEN EKLE';
+        idField.value = '';
+        dateField.value = new Date().toISOString().split('T')[0];
+        specField.value = '';
+        asstField.value = '';
+    }
+    
+    if(modal) modal.style.display = 'flex';
+};
+
+window.deleteFrozen = async function(id) {
+    if (confirm('Bu frozen kaydını silmek istediğinize emin misiniz?')) {
+        if (supabaseClient) {
+            const { error } = await supabaseClient.from('frozen_events').delete().eq('id', id);
+            if (error) { showToast(error.message, true); return; }
+            frozenData = frozenData.filter(f => f.id != id);
+            showToast('Kayıt başarıyla silindi.');
+            renderSchedule();
+        }
+    }
+};
+
 function setupEventListeners() {
     if(btnPrevWeek) btnPrevWeek.addEventListener('click', () => {
         currentWeekOffset--;
@@ -1764,22 +1980,166 @@ function setupEventListeners() {
     // Tab Event Listeners
     const tabLab = document.getElementById('tabLab');
     const tabOuter = document.getElementById('tabOuter');
+    const tabFrozen = document.getElementById('tabFrozen');
     
-    if (tabLab && tabOuter) {
+    if (tabLab && tabOuter && tabFrozen) {
         tabLab.addEventListener('click', () => {
             activeTab = 'lab';
             tabLab.classList.add('active');
             tabOuter.classList.remove('active');
+            tabFrozen.classList.remove('active');
             renderSchedule();
         });
         tabOuter.addEventListener('click', () => {
             activeTab = 'outer';
             tabOuter.classList.add('active');
             tabLab.classList.remove('active');
+            tabFrozen.classList.remove('active');
+            renderSchedule();
+        });
+        tabFrozen.addEventListener('click', () => {
+            activeTab = 'frozen';
+            tabFrozen.classList.add('active');
+            tabLab.classList.remove('active');
+            tabOuter.classList.remove('active');
             renderSchedule();
         });
     }
+    
+    // Message Listeners
+    const msgOpen = document.getElementById('openMessageModalBtn');
+    const msgClose = document.getElementById('closeMessageBtn');
+    const msgModal = document.getElementById('messageModal');
+    const msgSend = document.getElementById('sendMessageBtn');
+    
+    if(msgOpen) msgOpen.addEventListener('click', () => { if(msgModal) msgModal.style.display = 'flex'; });
+    if(msgClose) msgClose.addEventListener('click', () => { if(msgModal) msgModal.style.display = 'none'; });
+    
+    if(msgSend) msgSend.addEventListener('click', async () => {
+        const content = document.getElementById('messageContent').value;
+        const sender = document.getElementById('senderInfo').value;
+        
+        if(!content) { alert('Lütfen mesaj yazın.'); return; }
+        
+        if(supabaseClient) {
+            const { error } = await supabaseClient.from('user_messages').insert({
+                content: content,
+                sender_info: sender
+            });
+            if(error) { showToast('Gönderim hatası: ' + error.message, true); return; }
+            showToast('Mesajınız başarıyla gönderildi.');
+            if(msgModal) msgModal.style.display = 'none';
+            document.getElementById('messageContent').value = '';
+            document.getElementById('senderInfo').value = '';
+        } else {
+            showToast('Supabase bağlantısı yok, mesaj gönderilemedi.', true);
+        }
+    });
+
+    // Frozen Modal Listeners
+    const closeFrz = document.getElementById('closeFrozenBtn');
+    if(closeFrz) closeFrz.addEventListener('click', () => { document.getElementById('frozenModal').style.display = 'none'; });
+    
+    const saveFrz = document.getElementById('saveFrozenBtn');
+    if(saveFrz) saveFrz.addEventListener('click', async () => {
+        const id = document.getElementById('editFrozenId').value;
+        const date = document.getElementById('frozenDate').value;
+        const spec = document.getElementById('frozenSpecialist').value;
+        const asst = document.getElementById('frozenAssistant').value;
+        
+        if(!date || !spec || !asst) { alert('Lütfen tüm alanları doldurun.'); return; }
+        
+        if(id) {
+            const { error } = await supabaseClient.from('frozen_events').update({ date, specialist: spec, assistant: asst }).eq('id', id);
+            if(error) { showToast(error.message, true); return; }
+            showToast('Frozen başarıyla güncellendi.');
+        } else {
+            const { data, error } = await supabaseClient.from('frozen_events').insert({ date, specialist: spec, assistant: asst }).select().single();
+            if(error) { showToast(error.message, true); return; }
+            frozenData.push(data);
+            showToast('Yeni frozen başarıyla eklendi.');
+        }
+        
+        frozenData = await fetchFrozenFromSupabase();
+        document.getElementById('frozenModal').style.display = 'none';
+        renderSchedule();
+    });
+
+    // View Messages (Admin) - Modal Listeners
+    const closeMsgsBtn = document.getElementById('closeViewMessagesBtn');
+    const refreshMsgsBtn = document.getElementById('refreshMessagesBtn');
+    
+    if(closeMsgsBtn) closeMsgsBtn.addEventListener('click', () => { 
+        const modal = document.getElementById('viewMessagesModal');
+        if(modal) modal.style.display = 'none'; 
+    });
+    
+    if(refreshMsgsBtn) refreshMsgsBtn.addEventListener('click', fetchAndRenderMessages);
 }
+
+window.openMessagesModal = function() {
+    const modal = document.getElementById('viewMessagesModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        fetchAndRenderMessages();
+    }
+};
+
+async function fetchAndRenderMessages() {
+    const listContainer = document.getElementById('messagesListContainer');
+    if(!listContainer) return;
+    
+    listContainer.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
+    
+    if(!supabaseClient) {
+        listContainer.innerHTML = '<div style="color:#ef4444; padding:2rem;">Supabase bağlantısı kurulamadı.</div>';
+        return;
+    }
+    
+    const { data, error } = await supabaseClient.from('user_messages').select('*').order('created_at', { ascending: false });
+    
+    if(error) {
+        listContainer.innerHTML = `<div style="color:#ef4444; padding:2rem;">Hata: ${error.message}</div>`;
+        return;
+    }
+    
+    if(!data || data.length === 0) {
+        listContainer.innerHTML = '<div style="color:var(--text-muted); padding:2rem; text-align:center;">Henüz mesaj yok.</div>';
+        return;
+    }
+    
+    let html = '';
+    data.forEach(m => {
+        const date = new Date(m.created_at).toLocaleString('tr-TR');
+        html += `
+            <div class="message-item" id="msg-${m.id}">
+                <button class="delete-message-btn" onclick="deleteMessage(${m.id})" title="Mesajı Sil">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+                <div class="message-date">${date}</div>
+                <div class="message-text">${m.content}</div>
+                <div class="message-sender"><i class="fa-solid fa-user-pen"></i> Gönderen: ${m.sender_info || 'Anonim'}</div>
+            </div>
+        `;
+    });
+    listContainer.innerHTML = html;
+}
+
+window.deleteMessage = async function(id) {
+    if(!confirm('Bu mesajı silmek istediğinize emin misiniz?')) return;
+    
+    if(supabaseClient) {
+        const { error } = await supabaseClient.from('user_messages').delete().eq('id', id);
+        if(error) { alert(error.message); return; }
+        const item = document.getElementById(`msg-${id}`);
+        if(item) item.remove();
+        
+        const listContainer = document.getElementById('messagesListContainer');
+        if(listContainer && listContainer.children.length === 0) {
+            listContainer.innerHTML = '<div style="color:var(--text-muted); padding:2rem; text-align:center;">Henüz mesaj yok.</div>';
+        }
+    }
+};
 
 // === ADMIN LOGIC ===
 function setupAdminListeners() {
@@ -1859,7 +2219,7 @@ function setupAdminListeners() {
                 if (uploadError) {
                     console.error('Fotoğraf yükleme hatası:', uploadError.message);
                     if (uploadError.message.includes('bucket')) {
-                        alert('Hata: Supabase panelinde "event-images" adında "Public" bir Bucket oluşturmanız gerekiyor.');
+                        showToast('Hata: Supabase panelinde "event-images" adında "Public" bir Bucket oluşturmanız gerekiyor.', true);
                         return;
                     }
                 } else {
@@ -1891,7 +2251,8 @@ function setupAdminListeners() {
                     category: categoryVal,
                     image_url: imageUrlVal
                 }).eq('id', id);
-                if(error) { alert('Güncelleme hatası: ' + error.message); return; }
+                if(error) { showToast('Güncelleme hatası: ' + error.message, true); return; }
+                showToast('Eğitim başarıyla güncellendi.');
             }
             const ev = appData.find(e => e.id == id);
             if(ev) { ev.date=dateVal; ev.dateString=dateStr; ev.time=timeVal; ev.speakers=speakersArr; ev.topics=topicsArr; ev.category=categoryVal; ev.image_url=imageUrlVal; }
@@ -1907,7 +2268,8 @@ function setupAdminListeners() {
                     category: categoryVal,
                     image_url: imageUrlVal
                 }).select().single();
-                if(error) { alert('Kaydetme hatası: ' + error.message); return; }
+                if(error) { showToast('Kaydetme hatası: ' + error.message, true); return; }
+                showToast('Yeni eğitim başarıyla eklendi.');
                 appData.push({ id: data.id, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal, image_url: imageUrlVal });
             } else {
                 const newId = appData.length > 0 ? Math.max(...appData.map(e => e.id)) + 1 : 1;
@@ -1944,7 +2306,8 @@ window.deleteSession = async function(id) {
     if(confirm('Eğitimi programdan silmek istediğinize emin misiniz?')) {
         if(supabaseClient) {
             const { error } = await supabaseClient.from('schedule_events').delete().eq('id', id);
-            if(error) { alert('Silme hatası: ' + error.message); return; }
+            if(error) { showToast('Silme hatası: ' + error.message, true); return; }
+            showToast('Eğitim başarıyla silindi.');
         }
         appData = appData.filter(e => e.id != id);
         renderSchedule();
@@ -1992,7 +2355,16 @@ function openImageOverlay(src) {
 
 function closeImageOverlay() {
     const overlay = document.getElementById('imageOverlay');
-    if (overlay) overlay.style.display = 'none';
+    const overlayImg = document.getElementById('overlayImg');
+    if (overlay) {
+        overlay.style.display = 'none';
+        // Reset scale and origin on close
+        overlayScale = 1;
+        if (overlayImg) {
+            overlayImg.style.transform = `scale(1)`;
+            overlayImg.style.transformOrigin = 'center center';
+        }
+    }
 }
 
 // Global'e ekle (onclick için)
@@ -2010,14 +2382,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Zoom (Mouse Wheel)
+        // Zoom (Mouse Wheel) + Follow Mouse
+        overlayImg.style.transition = 'transform 0.1s ease-out';
+        overlayImg.style.cursor = 'zoom-in';
+
         overlay.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            overlayScale += delta;
-            overlayScale = Math.min(Math.max(0.5, overlayScale), 4);
-            if (overlayImg) overlayImg.style.transform = `scale(${overlayScale})`;
+            const delta = e.deltaY > 0 ? -0.3 : 0.3;
+            const newScale = Math.min(Math.max(1, overlayScale + delta), 8);
+            
+            if (newScale !== overlayScale) {
+                const rect = overlayImg.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / (rect.width / overlayScale)) * 100;
+                const y = ((e.clientY - rect.top) / (rect.height / overlayScale)) * 100;
+                
+                overlayImg.style.transformOrigin = `${x}% ${y}%`;
+                overlayScale = newScale;
+                overlayImg.style.transform = `scale(${overlayScale})`;
+                overlayImg.style.cursor = overlayScale > 1 ? 'zoom-out' : 'zoom-in';
+            }
         }, { passive: false });
+
+        // Reset zoom on double click
+        overlay.addEventListener('dblclick', () => {
+            overlayScale = 1;
+            overlayImg.style.transform = `scale(1)`;
+            overlayImg.style.transformOrigin = 'center center';
+            overlayImg.style.cursor = 'zoom-in';
+        });
 
         // Touch Zoom (Pinch)
         let initialDistance = 0;
@@ -2030,6 +2422,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.touches[0].pageY - e.touches[1].pageY
                 );
                 initialScale = overlayScale;
+                
+                const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+                const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+                const rect = overlayImg.getBoundingClientRect();
+                const x = ((centerX - rect.left) / (rect.width / overlayScale)) * 100;
+                const y = ((centerY - rect.top) / (rect.height / overlayScale)) * 100;
+                overlayImg.style.transformOrigin = `${x}% ${y}%`;
             }
         }, { passive: true });
 
@@ -2041,10 +2440,60 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.touches[0].pageY - e.touches[1].pageY
                 );
                 const zoomFactor = dist / initialDistance;
-                overlayScale = initialScale * zoomFactor;
-                overlayScale = Math.min(Math.max(0.5, overlayScale), 4);
-                if (overlayImg) overlayImg.style.transform = `scale(${overlayScale})`;
+                overlayScale = Math.min(Math.max(1, initialScale * zoomFactor), 8);
+                if (overlayImg) {
+                    overlayImg.style.transform = `scale(${overlayScale})`;
+                    overlayImg.style.transition = 'none'; // Re-enable during move for responsiveness
+                }
             }
         }, { passive: false });
+
+        overlay.addEventListener('touchend', () => {
+            overlayImg.style.transition = 'transform 0.3s ease-out';
+            // Snap back if it was a quick pinch or just reset if requested
+            // "zoomu bırakınca normal boyuna geri dönsün"
+            if (overlayScale > 1) {
+                setTimeout(() => {
+                    overlayScale = 1;
+                    overlayImg.style.transform = `scale(1)`;
+                    overlayImg.style.transformOrigin = 'center center';
+                }, 1000); // Give user a second to see it, then reset
+            }
+        });
     }
 });
+
+function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMessage');
+    const toastIcon = toast ? toast.querySelector('i') : null;
+
+    if (!toast || !toastMsg) {
+        alert(message);
+        return;
+    }
+
+    toastMsg.textContent = message;
+    
+    if (isError) {
+        toast.style.borderColor = '#ef4444';
+        toast.style.background = 'rgba(239, 68, 68, 0.2)';
+        if (toastIcon) {
+            toastIcon.className = 'fa-solid fa-circle-exclamation';
+            toastIcon.style.color = '#ef4444';
+        }
+    } else {
+        toast.style.borderColor = 'var(--accent-cyan)';
+        toast.style.background = 'rgba(20, 241, 242, 0.2)';
+        if (toastIcon) {
+            toastIcon.className = 'fa-solid fa-check-circle';
+            toastIcon.style.color = 'var(--accent-cyan)';
+        }
+    }
+
+    toast.classList.add('active');
+    
+    setTimeout(() => {
+        toast.classList.remove('active');
+    }, 2500);
+}
