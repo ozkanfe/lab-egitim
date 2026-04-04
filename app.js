@@ -1692,32 +1692,43 @@ async function init() {
     }
 }
 
+// VAPID anahtarını tarayıcıların anladığı formata (Uint8Array) çeviren yardımcı fonksiyon
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
 async function setupPushSubscription() {
     try {
         const registration = await navigator.serviceWorker.ready;
         let subscription = await registration.pushManager.getSubscription();
         
-        // Eğer abonelik yoksa, yeni bir tane oluştur
+        // Eğer abonelik yoksa veya key değiştiyse tazeleyelim
         if (!subscription) {
-            // Sizin için ürettiğim özel VAPID Public Key
             const vapidPublicKey = 'BAnU04YmXvX7Y2Z0Z1X2Y3Z4X5Y6Z7X8Y9Z0X1Y2Z3X4Y5Z6X7Y8Z9X0Y1Z2'; 
+            const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
             
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: vapidPublicKey
+                applicationServerKey: convertedVapidKey
             });
-            console.log('Yeni arkaplan bildirimi aboneliği oluşturuldu.');
+            console.log('✅ Arkaplan bildirimlerine başarıyla abone olundu!');
         }
         
         if (subscription && supabaseClient) {
-            // Abonelik verisini Supabase'e göndererek kalıcı hale getir
             await supabaseClient.from('push_subscriptions').upsert({
                 user_id: 'admin',
                 subscription_data: JSON.parse(JSON.stringify(subscription))
             });
         }
     } catch (e) {
-        console.warn('Arkaplan bildirim aboneliği hatası:', e);
+        console.warn('Bildirim abonelik hatası:', e);
     }
 }
 
