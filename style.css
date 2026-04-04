@@ -165,7 +165,9 @@ body {
 .tab-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-light);
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 15px rgba(20, 241, 242, 0.3);
+    transform: translateY(-2px);
 }
 
 .tab-btn.active {
@@ -350,11 +352,13 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: background 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .custom-dropdown-btn:hover {
     background: rgba(12, 227, 227, 0.18);
+    box-shadow: 0 0 15px rgba(20, 241, 242, 0.4);
+    transform: translateY(-2px);
 }
 
 .custom-dropdown-list {
