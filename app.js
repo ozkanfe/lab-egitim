@@ -1436,7 +1436,7 @@ try {
     if (window.supabase && window.supabase.createClient) {
         _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     }
-} catch(e) { console.warn('Supabase init failed:', e); }
+} catch (e) { console.warn('Supabase init failed:', e); }
 const supabaseClient = _sbClient;
 
 async function fetchDataFromSupabase() {
@@ -1448,16 +1448,16 @@ async function fetchDataFromSupabase() {
             .order('date', { ascending: true });
         if (error) { console.error('Supabase fetch error:', error); return null; }
         return data.map(r => ({
-            id:         r.id,
-            date:       r.date,
+            id: r.id,
+            date: r.date,
             dateString: r.date_string || r.date,
-            time:       r.time,
-            category:   r.category || 'lab',
-            image_url:  r.image_url,
-            speakers:   Array.isArray(r.speakers) ? r.speakers : JSON.parse(r.speakers || '[]'),
-            topics:     Array.isArray(r.topics)   ? r.topics   : JSON.parse(r.topics   || '[]'),
+            time: r.time,
+            category: r.category || 'lab',
+            image_url: r.image_url,
+            speakers: Array.isArray(r.speakers) ? r.speakers : JSON.parse(r.speakers || '[]'),
+            topics: Array.isArray(r.topics) ? r.topics : JSON.parse(r.topics || '[]'),
         }));
-    } catch(e) { console.error('Fetch error:', e); return null; }
+    } catch (e) { console.error('Fetch error:', e); return null; }
 }
 
 async function fetchFrozenFromSupabase() {
@@ -1469,7 +1469,7 @@ async function fetchFrozenFromSupabase() {
             .order('date', { ascending: true });
         if (error) { console.error('Frozen fetch error:', error); return []; }
         return data;
-    } catch(e) { console.error('Frozen fetch error:', e); return []; }
+    } catch (e) { console.error('Frozen fetch error:', e); return []; }
 }
 
 // Eksik değişkenler (önceki düzenlemede silindi)
@@ -1498,44 +1498,44 @@ function getWeekRange(dateObj, offsetWeeks) {
     const date = new Date(dateObj);
     const day = date.getDay();
     const diffToMonday = date.getDate() - day + (day === 0 ? -6 : 1);
-    
+
     const monday = new Date(date.setDate(diffToMonday));
     monday.setDate(monday.getDate() + (offsetWeeks * 7));
-    
+
     const sunday = new Date(monday);
     sunday.setDate(sunday.getDate() + 6); // Cuma'dan Pazar'a çekildi
-    
+
     return { start: monday, end: sunday };
 }
 
 function populateMonthSelect() {
-    const monthDropdownBtn  = document.getElementById('monthDropdownBtn');
+    const monthDropdownBtn = document.getElementById('monthDropdownBtn');
     const monthDropdownList = document.getElementById('monthDropdownList');
-    const weekDropdown      = document.getElementById('weekDropdown');
-    const weekDropdownBtn   = document.getElementById('weekDropdownBtn');
-    const weekDropdownList  = document.getElementById('weekDropdownList');
-    if(!monthDropdownBtn) return;
+    const weekDropdown = document.getElementById('weekDropdown');
+    const weekDropdownBtn = document.getElementById('weekDropdownBtn');
+    const weekDropdownList = document.getElementById('weekDropdownList');
+    if (!monthDropdownBtn) return;
 
     const uniqueMonths = new Set();
     appData.forEach(ev => {
         const d = new Date(ev.date);
         if (!isNaN(d.getTime())) {
-            uniqueMonths.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+            uniqueMonths.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
         }
     });
     const sortedMonths = Array.from(uniqueMonths).sort();
-    const monthNames = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
-    const shortMon   = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const shortMon = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 
     monthDropdownList.innerHTML = '';
     sortedMonths.forEach(mStr => {
         const [y, m] = mStr.split('-');
         const item = document.createElement('div');
         item.className = 'custom-dropdown-item';
-        item.textContent = `${monthNames[parseInt(m)-1]} ${y}`;
+        item.textContent = `${monthNames[parseInt(m) - 1]} ${y}`;
         item.addEventListener('click', () => {
             monthDropdownList.style.display = 'none';
-            monthDropdownBtn.innerHTML = `📅 ${monthNames[parseInt(m)-1]} ${y} <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>`;
+            monthDropdownBtn.innerHTML = `📅 ${monthNames[parseInt(m) - 1]} ${y} <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>`;
             buildWeekList(mStr);
         });
         monthDropdownList.appendChild(item);
@@ -1551,7 +1551,7 @@ function populateMonthSelect() {
     function buildWeekList(targetMonthStr) {
         weekDropdownList.innerHTML = '';
         const monthEvents = appData.filter(ev => ev.date.startsWith(targetMonthStr));
-        monthEvents.sort((a,b) => new Date(a.date) - new Date(b.date));
+        monthEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
         const seenWeeks = new Set();
         monthEvents.forEach(ev => {
             const { start, end } = getWeekRange(new Date(ev.date), 0);
@@ -1569,16 +1569,16 @@ function populateMonthSelect() {
                     closeAll();
                     setTimeout(() => {
                         monthDropdownBtn.innerHTML = '📅 Tarih Seç <i class="fa-solid fa-chevron-down" style="font-size:0.7rem;"></i>';
-                        if(weekDropdown) weekDropdown.style.display = 'none';
+                        if (weekDropdown) weekDropdown.style.display = 'none';
                     }, 300);
                 });
                 weekDropdownList.appendChild(item);
             }
         });
-        if(weekDropdown) weekDropdown.style.display = 'block';
+        if (weekDropdown) weekDropdown.style.display = 'block';
     }
 
-    if(weekDropdownBtn) {
+    if (weekDropdownBtn) {
         weekDropdownBtn.addEventListener('click', e => {
             e.stopPropagation();
             const isOpen = weekDropdownList.style.display === 'block';
@@ -1590,14 +1590,14 @@ function populateMonthSelect() {
     document.addEventListener('click', closeAll);
 
     function closeAll() {
-        if(monthDropdownList) monthDropdownList.style.display = 'none';
-        if(weekDropdownList)  weekDropdownList.style.display  = 'none';
+        if (monthDropdownList) monthDropdownList.style.display = 'none';
+        if (weekDropdownList) weekDropdownList.style.display = 'none';
     }
 }
 
 async function init() {
     refreshAdminUI();
-    
+
     // Supabase'den veri çekmeyi dene
     const sbData = await fetchDataFromSupabase();
     if (sbData && sbData.length > 0) {
@@ -1639,10 +1639,10 @@ async function init() {
     scheduleAutoRefresh();
 
     populateMonthSelect();
-    
+
     // Frozen verisini de çek
     frozenData = await fetchFrozenFromSupabase();
-    
+
     renderSchedule();
     setupEventListeners();
     setupAdminListeners();
@@ -1651,12 +1651,12 @@ async function init() {
     if (isAdmin && "Notification" in window && Notification.permission !== "denied" && Notification.permission !== "granted") {
         Notification.requestPermission();
     }
-    
+
     if (supabaseClient) {
         // Realtime Mesaj Dinleyici (Hızlı Yeniden Bağlanma Destekli)
         const setupRealtime = () => {
             if (window.msgChannel) window.msgChannel.unsubscribe();
-            
+
             window.msgChannel = supabaseClient
                 .channel('message-updates')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_messages' }, payload => {
@@ -1684,7 +1684,7 @@ async function init() {
                 setupRealtime();
             }
         });
-            
+
         // Web Push Aboneliği
         if (isAdmin && 'serviceWorker' in navigator) {
             setupPushSubscription();
@@ -1708,19 +1708,19 @@ async function setupPushSubscription() {
     try {
         const registration = await navigator.serviceWorker.ready;
         let subscription = await registration.pushManager.getSubscription();
-        
+
         // Eğer abonelik yoksa veya key değiştiyse tazeleyelim
         if (!subscription) {
-            const vapidPublicKey = 'BAnU04YmXvX7Y2Z0Z1X2Y3Z4X5Y6Z7X8Y9Z0X1Y2Z3X4Y5Z6X7Y8Z9X0Y1Z2'; 
+            const vapidPublicKey = 'BAnU04YmXvX7Y2Z0Z1X2Y3Z4X5Y6Z7X8Y9Z0X1Y2Z3X4Y5Z6X7Y8Z9X0Y1Z2';
             const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
-            
+
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: convertedVapidKey
             });
             console.log('✅ Arkaplan bildirimlerine başarıyla abone olundu!');
         }
-        
+
         if (subscription && supabaseClient) {
             await supabaseClient.from('push_subscriptions').upsert({
                 user_id: 'admin',
@@ -1734,7 +1734,7 @@ async function setupPushSubscription() {
 
 function showBrowserNotification(title, text) {
     if (!("Notification" in window)) return;
-    
+
     if (Notification.permission === "granted") {
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.ready.then(registration => {
@@ -1745,15 +1745,15 @@ function showBrowserNotification(title, text) {
                     vibrate: [200, 100, 200],
                     tag: 'new-message',
                     renotify: true,
-                    requireInteraction: true 
+                    requireInteraction: true
                 });
             });
         } else {
-            const n = new Notification(title, { 
-                body: text, 
-                icon: 'https://via.placeholder.com/192x192/0ce3e3/ffffff?text=LE' 
+            const n = new Notification(title, {
+                body: text,
+                icon: 'https://via.placeholder.com/192x192/0ce3e3/ffffff?text=LE'
             });
-            n.onclick = function() { window.focus(); };
+            n.onclick = function () { window.focus(); };
         }
     } else if (Notification.permission !== "denied") {
         Notification.requestPermission().then(permission => {
@@ -1766,28 +1766,28 @@ function showBrowserNotification(title, text) {
 
 function refreshAdminUI() {
     if (isAdmin) {
-        if(adminLoginBtn) adminLoginBtn.style.display = 'none';
-        if(adminLogoutBtn) adminLogoutBtn.style.display = 'block';
-        if(addEventBtn) addEventBtn.style.display = 'block';
-        if(document.getElementById('viewMessagesBtn')) document.getElementById('viewMessagesBtn').style.display = 'block';
+        if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+        if (adminLogoutBtn) adminLogoutBtn.style.display = 'block';
+        if (addEventBtn) addEventBtn.style.display = 'block';
+        if (document.getElementById('viewMessagesBtn')) document.getElementById('viewMessagesBtn').style.display = 'block';
     } else {
-        if(adminLoginBtn) adminLoginBtn.style.display = 'block';
-        if(adminLogoutBtn) adminLogoutBtn.style.display = 'none';
-        if(addEventBtn) addEventBtn.style.display = 'none';
-        if(document.getElementById('viewMessagesBtn')) document.getElementById('viewMessagesBtn').style.display = 'none';
+        if (adminLoginBtn) adminLoginBtn.style.display = 'block';
+        if (adminLogoutBtn) adminLogoutBtn.style.display = 'none';
+        if (addEventBtn) addEventBtn.style.display = 'none';
+        if (document.getElementById('viewMessagesBtn')) document.getElementById('viewMessagesBtn').style.display = 'none';
     }
 }
 
 function renderSchedule() {
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = `<div class="loading-state"><div class="spinner"></div></div>`;
-    
+
     setTimeout(() => {
         const { start, end } = getWeekRange(baseDate, currentWeekOffset);
-        
-        const startCheck = new Date(start); startCheck.setHours(0,0,0,0);
-        const endCheck = new Date(end); endCheck.setHours(23,59,59,999);
-        
+
+        const startCheck = new Date(start); startCheck.setHours(0, 0, 0, 0);
+        const endCheck = new Date(end); endCheck.setHours(23, 59, 59, 999);
+
         const currentWeekData = appData.filter(session => {
             const sd = new Date(session.date);
             const inWeek = sd >= startCheck && sd <= endCheck;
@@ -1805,13 +1805,13 @@ function renderSchedule() {
         } else {
             let html = '';
             // Sort by date and time
-            currentWeekData.sort((a,b) => new Date(a.date) - new Date(b.date));
+            currentWeekData.sort((a, b) => new Date(a.date) - new Date(b.date));
             currentWeekData.forEach(session => {
                 html += generateGlassCard(session);
             });
             container.innerHTML = html;
         }
-        
+
         updateWeekText(start, end);
     }, 150);
 }
@@ -1834,16 +1834,16 @@ function generateGlassCard(session) {
 
     for (let i = 0; i < maxLen; i++) {
         let blockHtml = '';
-        if(spks[i]) blockHtml += `<div class="speaker-line">${spks[i]}</div>`;
-        if(tpcs[i]) blockHtml += `<div class="card-topics">${tpcs[i]}</div>`;
-        
+        if (spks[i]) blockHtml += `<div class="speaker-line">${spks[i]}</div>`;
+        if (tpcs[i]) blockHtml += `<div class="card-topics">${tpcs[i]}</div>`;
+
         contentHtml += `<div style="width:100%; text-align:center; display:flex; flex-direction:column; gap:8px;">${blockHtml}</div>`;
-        
+
         if (i < maxLen - 1) {
             contentHtml += `<div class="divider" style="margin: 1.5rem 0;"></div>`;
         }
     }
-    
+
     // Eğer hiç konuşmacı veya konu yoksa ama veri varsa boş kalmasın diye fallback
     if (maxLen === 0) {
         contentHtml = `<div class="card-topics">Program Detayı Bekleniyor</div>`;
@@ -1883,7 +1883,7 @@ function generateGlassCard(session) {
 }
 
 function updateWeekText(start, end) {
-    if(!weekRangeDisplay) return;
+    if (!weekRangeDisplay) return;
     const months = ["OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"];
     const startStr = `${start.getDate()} ${months[start.getMonth()]}`;
     const endStr = `${end.getDate()} ${months[end.getMonth()]} ${end.getFullYear()}`;
@@ -1891,18 +1891,18 @@ function updateWeekText(start, end) {
 }
 
 function renderFrozen() {
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = '';
-    
+
     // Sort local frozen data by date
-    frozenData.sort((a,b) => new Date(a.date) - new Date(b.date));
-    
+    frozenData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
     // 1. Bugüne ait olanı bul
     const todayStr = new Date().toISOString().split('T')[0];
     const todayFrozen = frozenData.find(f => f.date === todayStr);
-    
+
     let html = '';
-    
+
     // Admin Ekle Butonu (Sadece Frozen sekmesinde ve adminseniz)
     if (isAdmin) {
         html += `
@@ -1950,7 +1950,7 @@ function renderFrozen() {
             </div>
         `;
     }
-    
+
     // 2. Aylık Liste (Sadece baseDate'in ayına ait olanlar)
     const currentMonth = baseDate.getMonth();
     const currentYear = baseDate.getFullYear();
@@ -1958,16 +1958,16 @@ function renderFrozen() {
         const d = new Date(f.date);
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
-    
-    html += `<div class="monthly-frozen-title"><i class="fa-solid fa-calendar-days"></i> ${["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"][currentMonth]} LİSTESİ</div>`;
-    
+
+    html += `<div class="monthly-frozen-title"><i class="fa-solid fa-calendar-days"></i> ${["OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"][currentMonth]} LİSTESİ</div>`;
+
     if (monthlyData.length === 0) {
         html += `<div style="grid-column: 1 / -1; text-align:center; padding: 3rem; color:var(--text-muted);">Henüz bir liste bulunmuyor.</div>`;
     } else {
         monthlyData.forEach(frz => {
             const dateObj = new Date(frz.date);
-            const dateDisplay = `${dateObj.getDate()} ${["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"][dateObj.getMonth()]}`;
-            
+            const dateDisplay = `${dateObj.getDate()} ${["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"][dateObj.getMonth()]}`;
+
             html += `
                 <div class="glass-card frozen-row-card">
                     <div class="frozen-row-date">${dateDisplay}</div>
@@ -1989,18 +1989,18 @@ function renderFrozen() {
             `;
         });
     }
-    
+
     container.innerHTML = html;
 }
 
-window.openFrozenModal = function(id = null) {
+window.openFrozenModal = function (id = null) {
     const modal = document.getElementById('frozenModal');
     const title = document.getElementById('frozenModalTitle');
     const idField = document.getElementById('editFrozenId');
     const dateField = document.getElementById('frozenDate');
     const specField = document.getElementById('frozenSpecialist');
     const asstField = document.getElementById('frozenAssistant');
-    
+
     if (id) {
         const item = frozenData.find(f => f.id == id);
         if (item) {
@@ -2017,11 +2017,11 @@ window.openFrozenModal = function(id = null) {
         specField.value = '';
         asstField.value = '';
     }
-    
-    if(modal) modal.style.display = 'flex';
+
+    if (modal) modal.style.display = 'flex';
 };
 
-window.deleteFrozen = async function(id) {
+window.deleteFrozen = async function (id) {
     if (confirm('Bu frozen kaydını silmek istediğinize emin misiniz?')) {
         if (supabaseClient) {
             const { error } = await supabaseClient.from('frozen_events').delete().eq('id', id);
@@ -2034,12 +2034,12 @@ window.deleteFrozen = async function(id) {
 };
 
 function setupEventListeners() {
-    if(btnPrevWeek) btnPrevWeek.addEventListener('click', () => {
+    if (btnPrevWeek) btnPrevWeek.addEventListener('click', () => {
         currentWeekOffset--;
         renderSchedule();
     });
 
-    if(btnNextWeek) btnNextWeek.addEventListener('click', () => {
+    if (btnNextWeek) btnNextWeek.addEventListener('click', () => {
         currentWeekOffset++;
         renderSchedule();
     });
@@ -2048,7 +2048,7 @@ function setupEventListeners() {
     const tabLab = document.getElementById('tabLab');
     const tabOuter = document.getElementById('tabOuter');
     const tabFrozen = document.getElementById('tabFrozen');
-    
+
     if (tabLab && tabOuter && tabFrozen) {
         tabLab.addEventListener('click', () => {
             activeTab = 'lab';
@@ -2072,30 +2072,30 @@ function setupEventListeners() {
             renderSchedule();
         });
     }
-    
+
     // Message Listeners
     const msgOpen = document.getElementById('openMessageModalBtn');
     const msgClose = document.getElementById('closeMessageBtn');
     const msgModal = document.getElementById('messageModal');
     const msgSend = document.getElementById('sendMessageBtn');
-    
-    if(msgOpen) msgOpen.addEventListener('click', () => { if(msgModal) msgModal.style.display = 'flex'; });
-    if(msgClose) msgClose.addEventListener('click', () => { if(msgModal) msgModal.style.display = 'none'; });
-    
-    if(msgSend) msgSend.addEventListener('click', async () => {
+
+    if (msgOpen) msgOpen.addEventListener('click', () => { if (msgModal) msgModal.style.display = 'flex'; });
+    if (msgClose) msgClose.addEventListener('click', () => { if (msgModal) msgModal.style.display = 'none'; });
+
+    if (msgSend) msgSend.addEventListener('click', async () => {
         const content = document.getElementById('messageContent').value;
         const sender = document.getElementById('senderInfo').value;
-        
-        if(!content) { alert('Lütfen mesaj yazın.'); return; }
-        
-        if(supabaseClient) {
+
+        if (!content) { alert('Lütfen mesaj yazın.'); return; }
+
+        if (supabaseClient) {
             const { error } = await supabaseClient.from('user_messages').insert({
                 content: content,
                 sender_info: sender
             });
-            if(error) { showToast('Gönderim hatası: ' + error.message, true); return; }
+            if (error) { showToast('Gönderim hatası: ' + error.message, true); return; }
             showToast('Mesajınız başarıyla gönderildi.');
-            if(msgModal) msgModal.style.display = 'none';
+            if (msgModal) msgModal.style.display = 'none';
             document.getElementById('messageContent').value = '';
             document.getElementById('senderInfo').value = '';
         } else {
@@ -2105,28 +2105,28 @@ function setupEventListeners() {
 
     // Frozen Modal Listeners
     const closeFrz = document.getElementById('closeFrozenBtn');
-    if(closeFrz) closeFrz.addEventListener('click', () => { document.getElementById('frozenModal').style.display = 'none'; });
-    
+    if (closeFrz) closeFrz.addEventListener('click', () => { document.getElementById('frozenModal').style.display = 'none'; });
+
     const saveFrz = document.getElementById('saveFrozenBtn');
-    if(saveFrz) saveFrz.addEventListener('click', async () => {
+    if (saveFrz) saveFrz.addEventListener('click', async () => {
         const id = document.getElementById('editFrozenId').value;
         const date = document.getElementById('frozenDate').value;
         const spec = document.getElementById('frozenSpecialist').value;
         const asst = document.getElementById('frozenAssistant').value;
-        
-        if(!date || !spec || !asst) { alert('Lütfen tüm alanları doldurun.'); return; }
-        
-        if(id) {
+
+        if (!date || !spec || !asst) { alert('Lütfen tüm alanları doldurun.'); return; }
+
+        if (id) {
             const { error } = await supabaseClient.from('frozen_events').update({ date, specialist: spec, assistant: asst }).eq('id', id);
-            if(error) { showToast(error.message, true); return; }
+            if (error) { showToast(error.message, true); return; }
             showToast('Frozen başarıyla güncellendi.');
         } else {
             const { data, error } = await supabaseClient.from('frozen_events').insert({ date, specialist: spec, assistant: asst }).select().single();
-            if(error) { showToast(error.message, true); return; }
+            if (error) { showToast(error.message, true); return; }
             frozenData.push(data);
             showToast('Yeni frozen başarıyla eklendi.');
         }
-        
+
         frozenData = await fetchFrozenFromSupabase();
         document.getElementById('frozenModal').style.display = 'none';
         renderSchedule();
@@ -2135,16 +2135,16 @@ function setupEventListeners() {
     // View Messages (Admin) - Modal Listeners
     const closeMsgsBtn = document.getElementById('closeViewMessagesBtn');
     const refreshMsgsBtn = document.getElementById('refreshMessagesBtn');
-    
-    if(closeMsgsBtn) closeMsgsBtn.addEventListener('click', () => { 
+
+    if (closeMsgsBtn) closeMsgsBtn.addEventListener('click', () => {
         const modal = document.getElementById('viewMessagesModal');
-        if(modal) modal.style.display = 'none'; 
+        if (modal) modal.style.display = 'none';
     });
-    
-    if(refreshMsgsBtn) refreshMsgsBtn.addEventListener('click', fetchAndRenderMessages);
+
+    if (refreshMsgsBtn) refreshMsgsBtn.addEventListener('click', fetchAndRenderMessages);
 }
 
-window.openMessagesModal = function() {
+window.openMessagesModal = function () {
     const modal = document.getElementById('viewMessagesModal');
     if (modal) {
         modal.style.display = 'flex';
@@ -2154,27 +2154,27 @@ window.openMessagesModal = function() {
 
 async function fetchAndRenderMessages() {
     const listContainer = document.getElementById('messagesListContainer');
-    if(!listContainer) return;
-    
+    if (!listContainer) return;
+
     listContainer.innerHTML = '<div class="loading-state"><div class="spinner"></div></div>';
-    
-    if(!supabaseClient) {
+
+    if (!supabaseClient) {
         listContainer.innerHTML = '<div style="color:#ef4444; padding:2rem;">Supabase bağlantısı kurulamadı.</div>';
         return;
     }
-    
+
     const { data, error } = await supabaseClient.from('user_messages').select('*').order('created_at', { ascending: false });
-    
-    if(error) {
+
+    if (error) {
         listContainer.innerHTML = `<div style="color:#ef4444; padding:2rem;">Hata: ${error.message}</div>`;
         return;
     }
-    
-    if(!data || data.length === 0) {
+
+    if (!data || data.length === 0) {
         listContainer.innerHTML = '<div style="color:var(--text-muted); padding:2rem; text-align:center;">Henüz mesaj yok.</div>';
         return;
     }
-    
+
     let html = '';
     data.forEach(m => {
         const date = new Date(m.created_at).toLocaleString('tr-TR');
@@ -2192,17 +2192,17 @@ async function fetchAndRenderMessages() {
     listContainer.innerHTML = html;
 }
 
-window.deleteMessage = async function(id) {
-    if(!confirm('Bu mesajı silmek istediğinize emin misiniz?')) return;
-    
-    if(supabaseClient) {
+window.deleteMessage = async function (id) {
+    if (!confirm('Bu mesajı silmek istediğinize emin misiniz?')) return;
+
+    if (supabaseClient) {
         const { error } = await supabaseClient.from('user_messages').delete().eq('id', id);
-        if(error) { alert(error.message); return; }
+        if (error) { alert(error.message); return; }
         const item = document.getElementById(`msg-${id}`);
-        if(item) item.remove();
-        
+        if (item) item.remove();
+
         const listContainer = document.getElementById('messagesListContainer');
-        if(listContainer && listContainer.children.length === 0) {
+        if (listContainer && listContainer.children.length === 0) {
             listContainer.innerHTML = '<div style="color:var(--text-muted); padding:2rem; text-align:center;">Henüz mesaj yok.</div>';
         }
     }
@@ -2211,24 +2211,24 @@ window.deleteMessage = async function(id) {
 // === ADMIN LOGIC ===
 function setupAdminListeners() {
     // Login
-    if(adminLoginBtn) adminLoginBtn.addEventListener('click', () => {
-        if(loginModal) loginModal.style.display = 'flex';
+    if (adminLoginBtn) adminLoginBtn.addEventListener('click', () => {
+        if (loginModal) loginModal.style.display = 'flex';
         const pwField = document.getElementById('adminPassword');
-        if(pwField) pwField.value = '';
+        if (pwField) pwField.value = '';
         const errField = document.getElementById('loginError');
-        if(errField) errField.style.display = 'none';
+        if (errField) errField.style.display = 'none';
     });
-    
+
     const closeLgn = document.getElementById('closeLoginBtn');
-    if(closeLgn) closeLgn.addEventListener('click', () => { if(loginModal) loginModal.style.display = 'none'; });
-    
+    if (closeLgn) closeLgn.addEventListener('click', () => { if (loginModal) loginModal.style.display = 'none'; });
+
     const subLgn = document.getElementById('loginSubmitBtn');
-    if(subLgn) subLgn.addEventListener('click', () => {
+    if (subLgn) subLgn.addEventListener('click', () => {
         const pw = document.getElementById('adminPassword').value;
-        if(pw === '1234qwer') {
+        if (pw === '1234qwer') {
             isAdmin = true;
             localStorage.setItem('isAdmin', 'true');
-            if(loginModal) loginModal.style.display = 'none';
+            if (loginModal) loginModal.style.display = 'none';
             refreshAdminUI();
             renderSchedule();
         } else {
@@ -2237,7 +2237,7 @@ function setupAdminListeners() {
     });
 
     // Logout
-    if(adminLogoutBtn) adminLogoutBtn.addEventListener('click', () => {
+    if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', () => {
         isAdmin = false;
         localStorage.removeItem('isAdmin');
         refreshAdminUI();
@@ -2246,10 +2246,10 @@ function setupAdminListeners() {
 
     // Add Modal close
     const clEdit = document.getElementById('closeEditBtn');
-    if(clEdit) clEdit.addEventListener('click', () => { if(editModal) editModal.style.display = 'none' });
-    
+    if (clEdit) clEdit.addEventListener('click', () => { if (editModal) editModal.style.display = 'none' });
+
     // Add Event Button
-    if(addEventBtn) addEventBtn.addEventListener('click', () => {
+    if (addEventBtn) addEventBtn.addEventListener('click', () => {
         document.getElementById('editEventId').value = '';
         document.getElementById('modalTitle').textContent = 'Yeni Eğitim Ekle';
         document.getElementById('eventDate').value = baseDate.toISOString().split('T')[0];
@@ -2257,12 +2257,12 @@ function setupAdminListeners() {
         document.getElementById('eventSpeakers').value = '';
         document.getElementById('eventTopics').value = '';
         document.getElementById('eventImageFile').value = '';
-        if(editModal) editModal.style.display = 'flex';
+        if (editModal) editModal.style.display = 'flex';
     });
 
     // Save Event Button
     const saveEv = document.getElementById('saveEventBtn');
-    if(saveEv) saveEv.addEventListener('click', async () => {
+    if (saveEv) saveEv.addEventListener('click', async () => {
         const id = document.getElementById('editEventId').value;
         const dateVal = document.getElementById('eventDate').value;
         const timeVal = document.getElementById('eventTime').value;
@@ -2297,18 +2297,18 @@ function setupAdminListeners() {
                 }
             }
         }
-        
+
         const speakersArr = speakersText.split(',').map(s => s.trim()).filter(s => s);
         const topicsArr = topicsText.split(',').map(s => s.trim()).filter(s => s);
-        
+
         const dateObj = new Date(dateVal);
         const months = ["OCAK", "ŞUBAT", "MART", "NİSAN", "MAYIS", "HAZİRAN", "TEMMUZ", "AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"];
         const days = ["PAZAR", "PAZARTESİ", "SALI", "ÇARŞAMBA", "PERŞEMBE", "CUMA", "CUMARTESİ"];
         const dateStr = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()} | ${days[dateObj.getDay()]}`;
 
-        if(id) {
+        if (id) {
             // Supabase'de güncelle
-            if(supabaseClient) {
+            if (supabaseClient) {
                 const { error } = await supabaseClient.from('schedule_events').update({
                     date: dateVal,
                     date_string: dateStr,
@@ -2318,14 +2318,14 @@ function setupAdminListeners() {
                     category: categoryVal,
                     image_url: imageUrlVal
                 }).eq('id', id);
-                if(error) { showToast('Güncelleme hatası: ' + error.message, true); return; }
+                if (error) { showToast('Güncelleme hatası: ' + error.message, true); return; }
                 showToast('Eğitim başarıyla güncellendi.');
             }
             const ev = appData.find(e => e.id == id);
-            if(ev) { ev.date=dateVal; ev.dateString=dateStr; ev.time=timeVal; ev.speakers=speakersArr; ev.topics=topicsArr; ev.category=categoryVal; ev.image_url=imageUrlVal; }
+            if (ev) { ev.date = dateVal; ev.dateString = dateStr; ev.time = timeVal; ev.speakers = speakersArr; ev.topics = topicsArr; ev.category = categoryVal; ev.image_url = imageUrlVal; }
         } else {
             // Supabase'e ekle
-            if(supabaseClient) {
+            if (supabaseClient) {
                 const { data, error } = await supabaseClient.from('schedule_events').insert({
                     date: dateVal,
                     date_string: dateStr,
@@ -2335,7 +2335,7 @@ function setupAdminListeners() {
                     category: categoryVal,
                     image_url: imageUrlVal
                 }).select().single();
-                if(error) { showToast('Kaydetme hatası: ' + error.message, true); return; }
+                if (error) { showToast('Kaydetme hatası: ' + error.message, true); return; }
                 showToast('Yeni eğitim başarıyla eklendi.');
                 appData.push({ id: data.id, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal, image_url: imageUrlVal });
             } else {
@@ -2343,8 +2343,8 @@ function setupAdminListeners() {
                 appData.push({ id: newId, date: dateVal, dateString: dateStr, time: timeVal, speakers: speakersArr, topics: topicsArr, category: categoryVal, image_url: imageUrlVal });
             }
         }
-        
-        if(editModal) editModal.style.display = 'none';
+
+        if (editModal) editModal.style.display = 'none';
         renderSchedule();
         populateMonthSelect();
     });
@@ -2352,8 +2352,8 @@ function setupAdminListeners() {
 
 function openEditModal(id) {
     const ev = appData.find(e => e.id == id);
-    if(!ev) return;
-    
+    if (!ev) return;
+
     document.getElementById('modalTitle').textContent = 'EĞİTİMİ DÜZENLE';
     document.getElementById('editEventId').value = ev.id;
     document.getElementById('eventDate').value = ev.date;
@@ -2363,17 +2363,17 @@ function openEditModal(id) {
     document.getElementById('eventImageUrl').value = ev.image_url || '';
     document.getElementById('eventImageFile').value = '';
     document.getElementById('eventType').value = ev.category || 'lab';
-    
-    if(editModal) editModal.style.display = 'flex';
+
+    if (editModal) editModal.style.display = 'flex';
 }
 
 // Make accessible to onclick
 window.openEditModal = openEditModal;
-window.deleteSession = async function(id) {
-    if(confirm('Eğitimi programdan silmek istediğinize emin misiniz?')) {
-        if(supabaseClient) {
+window.deleteSession = async function (id) {
+    if (confirm('Eğitimi programdan silmek istediğinize emin misiniz?')) {
+        if (supabaseClient) {
             const { error } = await supabaseClient.from('schedule_events').delete().eq('id', id);
-            if(error) { showToast('Silme hatası: ' + error.message, true); return; }
+            if (error) { showToast('Silme hatası: ' + error.message, true); return; }
             showToast('Eğitim başarıyla silindi.');
         }
         appData = appData.filter(e => e.id != id);
@@ -2391,9 +2391,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     const btn = document.getElementById('installPwaBtn');
-    if(btn) btn.style.display = 'block';
-    
-    if(btn) {
+    if (btn) btn.style.display = 'block';
+
+    if (btn) {
         btn.addEventListener('click', async () => {
             btn.style.display = 'none';
             deferredPrompt.prompt();
@@ -2447,7 +2447,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (overlay && overlayImg) {
         let ticking = false;
-        
+
         const updateTransform = (transition = true) => {
             if (!ticking) {
                 requestAnimationFrame(() => {
@@ -2470,9 +2470,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const delta = e.deltaY > 0 ? 0.8 : 1.25;
             const newScale = Math.min(Math.max(1, overlayScale * delta), 15);
-            
+
             if (newScale !== overlayScale) {
-                if (newScale <= 1.05) { 
+                if (newScale <= 1.05) {
                     overlayScale = 1; translateX = 0; translateY = 0;
                 } else {
                     overlayScale = newScale;
@@ -2558,7 +2558,7 @@ function showToast(message, isError = false) {
     }
 
     toastMsg.textContent = message;
-    
+
     if (isError) {
         toast.style.borderColor = '#ef4444';
         toast.style.background = 'rgba(239, 68, 68, 0.2)';
@@ -2576,7 +2576,7 @@ function showToast(message, isError = false) {
     }
 
     toast.classList.add('active');
-    
+
     // Web Bildirim İsteği Check (Uyanıklık için)
     if (!isError && Notification.permission === 'granted') {
         navigator.serviceWorker.ready.then(reg => {
