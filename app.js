@@ -1667,6 +1667,40 @@ async function init() {
                 }
             })
             .subscribe();
+            
+        // Web Push Aboneliği (Gerçek Arkaplan Bildirimleri İçin)
+        if (isAdmin && 'serviceWorker' in navigator) {
+            setupPushSubscription();
+        }
+    }
+}
+
+async function setupPushSubscription() {
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+        
+        if (!subscription) {
+            // Not: Web Push için bir VAPID Public Key gereklidir.
+            // Bu anahtar olmadan abonelik yapılamaz. Kullanıcıya bilgi veriyoruz.
+            console.log('Web Push aboneliği için VAPID anahtarı bekleniyor...');
+            /* 
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: 'BURAYA_VAPID_PUBLIC_KEY_GELECEK'
+            });
+            */
+        }
+        
+        if (subscription && supabaseClient) {
+            // Aboneliği Supabase'e kaydet
+            await supabaseClient.from('push_subscriptions').upsert({
+                subscription_data: subscription,
+                user_id: 'admin'
+            });
+        }
+    } catch (e) {
+        console.warn('Push aboneliği kurulamadı:', e);
     }
 }
 
