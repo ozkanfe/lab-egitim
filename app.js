@@ -1968,15 +1968,23 @@ function renderFrozen() {
             const dateObj = new Date(frz.date);
             const dateDisplay = `${dateObj.getDate()} ${["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"][dateObj.getMonth()]}`;
 
+            // Geçmiş kontrolü
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const frzDate = new Date(frz.date);
+            frzDate.setHours(0, 0, 0, 0);
+            const isPast = frzDate < now;
+            const pastClass = isPast ? 'is-past' : '';
+
             html += `
-                <div class="glass-card frozen-row-card">
+                <div class="glass-card frozen-row-card ${pastClass}">
                     <div class="frozen-row-date">${dateDisplay}</div>
                     <div class="frozen-row-info">
                         <div class="frozen-row-names">
-                            <span style="color:var(--accent-cyan)">U:</span> ${frz.specialist}
+                            <span class="frozen-row-label">UZMAN:</span> ${frz.specialist}
                         </div>
                         <div class="frozen-row-names">
-                            <span style="color:var(--accent-cyan)">A:</span> ${frz.assistant}
+                            <span class="frozen-row-label">ASİSTAN:</span> ${frz.assistant}
                         </div>
                     </div>
                     ${isAdmin ? `
@@ -2501,7 +2509,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const updateTransform = (transition = true) => {
             if (!ticking) {
                 requestAnimationFrame(() => {
-                    overlayImg.style.transition = transition ? 'transform 0.25s cubic-bezier(0.2, 0, 0.2, 1)' : 'none';
+                    overlayImg.style.transition = transition ? 'transform 0.1s ease-out' : 'none';
+                    
+                    // Boundary check to prevent excessive drifting
+                    if (overlayScale <= 1) {
+                        translateX = 0;
+                        translateY = 0;
+                        overlayScale = 1;
+                    } else {
+                        // Limit dragging based on scale
+                        const maxW = (overlayImg.clientWidth * (overlayScale - 1)) / 2;
+                        const maxH = (overlayImg.clientHeight * (overlayScale - 1)) / 2;
+                        translateX = Math.min(Math.max(translateX, -maxW - 100), maxW + 100);
+                        translateY = Math.min(Math.max(translateY, -maxH - 100), maxH + 100);
+                    }
+
                     overlayImg.style.transform = `translate(${translateX}px, ${translateY}px) scale(${overlayScale})`;
                     ticking = false;
                 });
@@ -2518,15 +2540,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Mouse Wheel Zoom
         overlay.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.8 : 1.25;
-            const newScale = Math.min(Math.max(1, overlayScale * delta), 15);
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.min(Math.max(1, overlayScale * delta), 10);
 
             if (newScale !== overlayScale) {
-                if (newScale <= 1.05) {
-                    overlayScale = 1; translateX = 0; translateY = 0;
-                } else {
-                    overlayScale = newScale;
-                }
+                overlayScale = newScale;
                 updateTransform(true);
             }
         }, { passive: false });
@@ -2550,25 +2568,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('mouseup', () => {
-            isDragging = false;
-            if (overlayImg) overlayImg.style.cursor = overlayScale > 1 ? 'move' : 'zoom-in';
+            if (isDragging) {
+                isDragging = false;
+                overlayImg.style.cursor = overlayScale > 1 ? 'move' : 'zoom-in';
+                // Snap back to boundaries if needed
+                updateTransform(true);
+            }
         });
 
         // Touch Pan & Zoom
         let initialDist = 0;
         let lastTouchX = 0, lastTouchY = 0;
+        let initialScale = 1;
 
         overlay.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1 && overlayScale > 1) {
+            if (e.touches.length === 1) {
                 lastTouchX = e.touches[0].clientX - translateX;
                 lastTouchY = e.touches[0].clientY - translateY;
+                isDragging = true;
             } else if (e.touches.length === 2) {
+                isDragging = false;
                 initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                initialScale = overlayScale;
             }
         }, { passive: true });
 
         overlay.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1 && overlayScale > 1) {
+            if (e.touches.length === 1 && isDragging && overlayScale > 1) {
                 translateX = e.touches[0].clientX - lastTouchX;
                 translateY = e.touches[0].clientY - lastTouchY;
                 updateTransform(false);
@@ -2576,16 +2602,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
                 const zoomFactor = dist / initialDist;
-                const newScale = Math.min(Math.max(1, overlayScale * zoomFactor), 15);
-                if (newScale <= 1.05) {
-                    overlayScale = 1; translateX = 0; translateY = 0;
-                } else {
-                    overlayScale = newScale;
-                }
-                initialDist = dist;
+                overlayScale = Math.min(Math.max(1, initialScale * zoomFactor), 10);
                 updateTransform(false);
             }
         }, { passive: false });
+
+        overlay.addEventListener('touchend', (e) => {
+            isDragging = false;
+            if (overlayScale <= 1.05) {
+                overlayScale = 1; translateX = 0; translateY = 0;
+            }
+            updateTransform(true);
+        });
 
         // Double Click to Reset
         overlay.addEventListener('dblclick', () => {

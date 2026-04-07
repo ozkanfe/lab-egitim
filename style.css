@@ -511,7 +511,9 @@ body {
 
 .is-past .speaker-line,
 .is-past .card-topics,
-.is-past .card-date {
+.is-past .card-date,
+.is-past .frozen-row-date,
+.is-past .frozen-row-names {
     text-decoration: line-through;
     text-decoration-thickness: 2px;
 }
@@ -678,6 +680,18 @@ body {
 .frozen-row-names {
     font-size: 1.1rem;
     font-weight: 600;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.frozen-row-label {
+    color: var(--accent-cyan);
+    font-size: 0.75rem;
+    font-weight: 800;
+    width: 75px; /* Sabit genişlik hizalamayı düzeltir */
+    display: inline-block;
+    letter-spacing: 1px;
 }
 
 @media (max-width: 768px) {
